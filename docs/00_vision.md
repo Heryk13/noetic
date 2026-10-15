@@ -1,6 +1,6 @@
 # Noetic — Living Wildlife (Vision)
 
-Version 0.2 · Oct 16, 2026 · @heryk
+Version 0.3 · Oct 16, 2026 · @heryk
 
 ## Goal
 

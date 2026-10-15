@@ -1,6 +1,6 @@
 # Noetic — Requirements Definition (要件定義)
 
-Version 0.2 · Oct 16, 2026 · @heryk
+Version 0.3 · Oct 16, 2026 · @heryk
 
 ## 1. Overview (概要)
 
