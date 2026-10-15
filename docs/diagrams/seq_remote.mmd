@@ -1,0 +1,18 @@
+sequenceDiagram
+  actor U as User
+  participant E as Editor remote client
+  participant G as Game (feature debug)
+  U->>E: Connect 127.0.0.1:15702
+  E->>G: POST rpc.discover
+  alt no answer
+    E-->>U: MSG-014
+  else ok
+    G-->>E: methods incl. noetic.*
+    loop every 250 ms
+      E->>G: noetic.agents
+      G-->>E: id, name, species, pos, state
+      E->>G: noetic.agent_state(selected)
+      G-->>E: needs, fear, health, node, scores
+      E-->>U: Details panel + live graph highlight
+    end
+  end

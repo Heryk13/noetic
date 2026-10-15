@@ -1,0 +1,13 @@
+[package]
+name = "noetic_runtime"
+description = "The crate a Bevy game adds to run Noetic animals: re-exports noetic_core and noetic_bevy."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+readme = "../../README.md"
+keywords.workspace = true
+categories.workspace = true
+
+[lints]
+workspace = true

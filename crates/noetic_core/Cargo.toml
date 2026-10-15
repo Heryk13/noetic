@@ -1,0 +1,13 @@
+[package]
+name = "noetic_core"
+description = "Needs, perception, reactions and activity choice for game animals that feel alive. No Bevy dependency."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+readme = "../../README.md"
+keywords.workspace = true
+categories.workspace = true
+
+[lints]
+workspace = true

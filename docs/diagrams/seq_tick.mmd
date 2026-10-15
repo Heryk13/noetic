@@ -1,0 +1,12 @@
+sequenceDiagram
+  participant G as Game (Bevy App)
+  participant P as NoeticPlugin systems
+  participant C as noetic_core
+  participant A as Game animation
+  G->>P: FixedUpdate
+  P->>P: Sync: read WaterSource, Burrow, Player… into WorldViewCache
+  P->>C: Think (round robin, think_hz): needs, perceive, memory, fear
+  C->>C: threat_branch / choose_activity (seeded Rng)
+  P->>C: Act: run_step, locomotion (every frame)
+  C-->>P: SimEvents (Anim, Alarm, Death)
+  P-->>A: NoeticAnimEvent{entity, event, clip, looping}

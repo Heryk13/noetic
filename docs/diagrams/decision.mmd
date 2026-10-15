@@ -1,0 +1,8 @@
+flowchart LR
+  N["Needs<br/>hunger · thirst · fatigue · fear · urges"] --> U["Choose activity<br/>(Utility score + personality + noise)"]
+  U --> B["Run activity steps<br/>(behavior tree sequence)"]
+  B -->|"eating lowers hunger,<br/>running raises fatigue"| N
+  P["Senses<br/>vision · hearing · smell + wind"] --> F["Fear"]
+  F -->|"fear > threshold"| R["Reaction graph<br/>freeze → thump → flee → hide<br/>(weighted branches %)"]
+  R -->|"interrupts"| B
+  R -->|"calm again"| U

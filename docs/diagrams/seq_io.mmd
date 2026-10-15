@@ -1,0 +1,22 @@
+sequenceDiagram
+  actor U as User
+  participant D as Export / Import dialog
+  participant B as editor::brain::compile
+  participant IO as core::io
+  participant P as Project
+  U->>D: Export .ron
+  D->>B: compile_graph(species graph)
+  B-->>D: Brain
+  D->>IO: export_species(species, activities)
+  IO-->>D: RON text
+  D-->>U: preview, Copy / Save
+  U->>D: Import (file or text)
+  D->>IO: parse_species(text)
+  IO->>IO: migrate(schema_version) → validate (V-01…V-05)
+  alt error
+    IO-->>D: ParseError(line, col)
+    D-->>U: MSG-013 inline
+  else ok
+    D->>P: import_species (name clash → "(2)")
+    P-->>U: toast MSG-012, tree updated
+  end

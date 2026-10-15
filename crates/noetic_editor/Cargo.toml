@@ -1,0 +1,13 @@
+[package]
+name = "noetic_editor"
+description = "Editor for Noetic: build, test and debug animal behavior in a 2D world, then export it to .noetic.ron."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+readme = "../../README.md"
+keywords.workspace = true
+categories.workspace = true
+
+[lints]
+workspace = true

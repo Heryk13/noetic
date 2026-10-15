@@ -1,0 +1,61 @@
+classDiagram
+  direction LR
+  class Species{+String species
+    +Color color
+    +Locomotion locomotion
+    +GroupKind group
+    +Shelter shelter
+    +Routine routine
+    +Senses senses
+    +NeedRates needs
+    +HealthSpec health
+    +PersonalityBase personality
+    +Vec~MarkSpec~ scent_marks
+    +Brain brain
+    +Map~ActivityId,Activity~ activities
+    +Map~String,String~ animation_clips}
+  class Brain{+ThreatBranch threat
+    +ChooseSpec choose}
+  class ThreatBranch{+Vec~WeightedRef~ first
+    +Map~NodeId,ReactionNode~ reactions}
+  class ReactionNode{+Reaction do
+    +Vec~WeightedRef~ next}
+  class ChooseSpec{+f32 noise
+    +Vec~ActivityId~ options}
+  class Activity{+String name
+    +Need need
+    +Curve curve
+    +f32 weight
+    +Vec~Step~ steps}
+  class Step{+StepKind do
+    +SecsRange secs
+    +Option~String~ anim}
+  class Agent{+AgentId id
+    +SpeciesId species
+    +u64 seed
+    +TraitMap traits
+    +Vec~QuirkId~ quirks
+    +bool locked
+    +Needs needs
+    +f32 fear
+    +Health health
+    +Memory memory
+    +AgentState state
+    +Rng rng}
+  class SimWorld{+Clock clock
+    +Wind wind
+    +Terrain terrain
+    +Vec~Agent~ agents
+    +Vec~ScentMark~ marks
+    +Vec~Stimulus~ stimuli
+    +SpatialGrid grid
+    +tick(dt)}
+  Species *-- Brain
+  Brain *-- ThreatBranch
+  Brain *-- ChooseSpec
+  ThreatBranch *-- ReactionNode
+  Species *-- Activity
+  Activity *-- Step
+  SimWorld *-- Agent
+  Agent --> Species : species
+  ChooseSpec --> Activity : options

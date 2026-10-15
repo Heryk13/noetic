@@ -1,0 +1,20 @@
+stateDiagram-v2
+  state "Area (AppState)" as A {
+    [*] --> World
+    Brain --> World
+    World --> Species
+    Species --> Individuals
+    Individuals --> Brain
+  }
+  state "Remote connection" as R {
+    [*] --> Disconnected
+    Disconnected --> Connecting: Connect
+    Connecting --> Connected: rpc.discover ok
+    Connecting --> Disconnected: error (MSG-014)
+    Connected --> Disconnected: 3 timeouts / Disconnect
+  }
+  state "World mode" as W {
+    [*] --> Simulate
+    Simulate --> EditTerrain: Edit world
+    EditTerrain --> Simulate: Done
+  }

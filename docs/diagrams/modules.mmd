@@ -1,0 +1,26 @@
+flowchart TB
+  subgraph EDITOR["noetic_editor (binary)"]
+    direction LR
+    E1["app / states"] ~~~ E2["shell<br/>layout · nav · dialog<br/>tooltip · toast · status · input"] ~~~ E3["project<br/>tree · history · persist"] ~~~ E4["brain<br/>model · rules · edit<br/>compile · view · live"] ~~~ E5["world<br/>host · view · camera<br/>tools · layers · edit"]
+    E6["inspector"] ~~~ E7["species<br/>view · edit · create<br/>presets · model3d"] ~~~ E8["individuals"] ~~~ E9["io<br/>export · import · clipboard"] ~~~ E10["remote (BRP client)"] ~~~ E11["theme · i18n"]
+  end
+  subgraph RUNTIME["noetic_runtime (facade crate)"]
+    direction LR
+    R1["prelude · NoeticPlugin re-export"]
+  end
+  subgraph BEVY["noetic_bevy"]
+    direction LR
+    B1["plugin"] ~~~ B2["asset<br/>loader · hot reload"] ~~~ B3["sync<br/>world view cache"] ~~~ B4["think<br/>think · act systems"] ~~~ B5["anim events"] ~~~ B6["nav adapter"] ~~~ B7["debug<br/>BRP methods"]
+  end
+  subgraph CORE["noetic_core (no Bevy dependency)"]
+    direction LR
+    C1["model"] ~~~ C2["agent<br/>needs · memory"] ~~~ C3["sim::tick"] ~~~ C4["perception"] ~~~ C5["emotion"] ~~~ C6["reaction"] ~~~ C7["utility"]
+    C8["steps"] ~~~ C9["social"] ~~~ C10["conflict"] ~~~ C11["territory"] ~~~ C12["locomotion"] ~~~ C13["personality"] ~~~ C14["rng · io · ext · sandbox"]
+  end
+  FEATHERS[("bevy · bevy_ui · bevy_feathers · bevy_remote")]
+  EDITOR --> RUNTIME
+  EDITOR --> FEATHERS
+  RUNTIME --> BEVY
+  RUNTIME --> CORE
+  BEVY --> CORE
+  BEVY --> FEATHERS

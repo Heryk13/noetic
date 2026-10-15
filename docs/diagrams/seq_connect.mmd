@@ -1,0 +1,18 @@
+sequenceDiagram
+  actor U as User
+  participant V as Graph view (drag_wire)
+  participant R as rules
+  participant E as edit
+  participant H as History
+  participant S as SimHost
+  U->>V: drag out-port → in-port
+  V->>R: validate_connection(from, to)
+  alt invalid
+    R-->>U: toast MSG-001/002/003
+  else valid
+    V->>E: connect(from, to)
+    E->>E: add edge, split weights (sum 100)
+    E->>H: push Undo(Connect)
+    E->>S: compile_graph → species.brain (live agents use it next decision)
+    E-->>U: toast MSG-008 when branched
+  end

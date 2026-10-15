@@ -1,0 +1,13 @@
+[package]
+name = "noetic_bevy"
+description = "Bevy plugin for Noetic: components, systems, .noetic.ron asset loading and animation events."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+readme = "../../README.md"
+keywords.workspace = true
+categories.workspace = true
+
+[lints]
+workspace = true

@@ -1,0 +1,46 @@
+# CLAUDE.md
+
+@CONTRIBUTING.md
+
+## The design documents are the plan
+
+Noetic is in its design phase. The plan lives in `docs/` (see `docs/README.md`): the Requirements
+Definition, then the Basic, External, Internal and Detailed Design. Code is built from them, one
+commit per step, and every piece of code traces back to an ID in them (`FR-xxx` → `F-xxx` →
+`SCR-nn-mm` → `API-xxx` → `MOD-xxx` → `UT-xxx`).
+
+- Before proposing where code goes, or moving it, look up the names involved in the Internal
+  Design (sheets 2 Workspace, 3 Modules, 4 Dependencies) and the Detailed Design: where code
+  sits may be a recorded decision. Cite the sheet and ID that agree, or present both sides when
+  one disagrees.
+- When the build departs from the design, update the document in the same change and add a
+  line to its Revision History sheet, so the docs never describe a program that does not exist.
+- The Excel files are edited in LibreOffice Calc, never rewritten by a script: a script loses
+  the links, the images and the formatting.
+
+## Every implementation
+
+Whenever a change is made, by the user or by you, before calling it done:
+
+1. Read the diff and check it against every rule in `CONTRIBUTING.md`:
+   the loop, file layout, separators, comments, Bevy patterns, errors, text, naming, tests and
+   docs. Grep every renamed identifier in `README.md` and `docs/`.
+2. Run `just check` yourself. Never report it as passing without running it.
+   Skip it for a docs-only change: there is nothing in it for `just check` to check.
+3. Report a short checklist: what follows the conventions, what is missing,
+   and a suggested commit message.
+
+At the end of every step of a plan, before the commit, run that review unasked, with an
+explicit pass over **every name** (constants, types, systems, helpers, parameters, tests) and
+over the **order** of sections and systems. A rename leaves variables whose names now lie, and
+the compiler never complains about those.
+
+Say plainly what was and was not verified: `just check` covers compiling, lints and tests, and
+it says nothing about how the editor looks or how an animal feels. Ask the user to run the
+editor or the example for that.
+
+## Bevy version
+
+Noetic pins one Bevy version per release (NFR-06), in the workspace `Cargo.toml`, and Bevy's
+APIs (bevy_feathers most of all) change between versions. Check signatures in the local source
+(`~/.cargo/registry/src/*/bevy_*-<version>`) instead of relying on memory.

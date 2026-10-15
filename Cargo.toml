@@ -1,0 +1,56 @@
+[workspace]
+resolver = "3"
+members = ["crates/*"]
+
+# shared by every crate, so a release bumps one number
+[workspace.package]
+version = "0.0.1"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/Heryk13/noetic"
+readme = "README.md"
+keywords = ["bevy", "gamedev", "ai", "behavior", "animals"]
+categories = ["game-development", "simulation"]
+
+[workspace.lints.rust]
+# Internal Design CS-02
+unsafe_code = "forbid"
+unused_qualifications = "warn"
+
+[workspace.lints.clippy]
+# systems receive their params via dependency injection, so many arguments is normal
+too_many_arguments = "allow"
+# queries naturally have complex types
+type_complexity = "allow"
+allow_attributes = "warn"
+allow_attributes_without_reason = "warn"
+doc_markdown = "warn"
+manual_let_else = "warn"
+nonstandard_macro_braces = "warn"
+print_stderr = "warn"
+print_stdout = "warn"
+redundant_closure_for_method_calls = "warn"
+redundant_else = "warn"
+semicolon_if_nothing_returned = "warn"
+# CONTRIBUTING forbids mod.rs (a split module is `brain.rs` next to `brain/`), and this
+# lint makes the rule hold without review
+mod_module_files = "warn"
+
+# Internal Design 2.3: light optimization for our code, so dev builds run smoothly and
+# still compile fast
+[profile.dev]
+opt-level = 1
+
+# full optimization for dependencies, they rarely change so this cost is paid once
+[profile.dev.package."*"]
+opt-level = 3
+
+# slower to build, but a faster and smaller binary
+[profile.release]
+codegen-units = 1
+lto = "thin"
+
+# tests and determinism checks, with debug assertions on (Internal Design EP-05)
+[profile.ci]
+inherits = "dev"
+debug-assertions = true

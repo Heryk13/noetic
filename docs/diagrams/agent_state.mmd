@@ -1,0 +1,17 @@
+stateDiagram-v2
+  [*] --> Alive
+  state Alive {
+    [*] --> Choosing
+    Choosing --> InActivity: choose_activity()
+    InActivity --> InActivity: next step
+    InActivity --> Choosing: steps done / failed
+    Choosing --> Reacting: fear > threshold
+    InActivity --> Reacting: fear > threshold
+    Reacting --> Reacting: weighted next reaction
+    Reacting --> Choosing: no next & fear < threshold
+    InActivity --> Fighting: rival near & aggro roll
+    Fighting --> Reacting: loses / flees
+    Fighting --> Choosing: wins / cooldown
+  }
+  Alive --> Dead: health = 0
+  Dead --> [*]
