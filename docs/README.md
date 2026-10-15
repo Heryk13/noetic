@@ -49,7 +49,7 @@ In code, the doc comment of every public item starts with its API ID, and every 
 - Editor UI: **bevy_ui + bevy_feathers with the default dark theme**, unchanged; UI language **English**.
 - Editor view is **2D**; 3D is seen inside the game through **remote debug** (BRP, `127.0.0.1:15702`).
 - One **`.noetic.ron`** file per species, loaded by the game through **`noetic`**.
-- Two crates on crates.io: **`noetic`** (the plugin games add, re-exports the core) and **`noetic_core`** (no Bevy). The editor ships as source, never from crates.io.
+- Two crates on crates.io: **`noetic`** (the plugin games add, re-exports the core) and **`noetic_core`** (no Bevy). The editor ships as a binary per OS on GitHub Releases, never from crates.io; a game downloads the one matching its `noetic` version into `tools/`.
 - License **MIT OR Apache-2.0**.
 
 Open questions are listed in the Requirements Definition §10.1.
