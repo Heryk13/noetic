@@ -17,7 +17,7 @@ The Excel files are made for LibreOffice Calc (they also open in Excel). Each wo
 
 - [prototype/noetic_prototype.html](prototype/noetic_prototype.html) — clickable HTML prototype (v21, English UI, Bevy Feathers default theme). Open it in a browser. The screenshots in the External Design come from this file.
 - [diagrams/](diagrams/) — Mermaid sources (`.mmd`) and rendered images of the module, class, state and sequence diagrams used in the Internal Design, plus the decision diagram of the Vision.
-- [images/system_overview.png](images/system_overview.png) — system overview used in the Requirements Definition and the Vision.
+- [images/system_overview.png](images/system_overview.png) — system overview (source: `system_overview.svg`, rendered at 1344 × 516) used in the Requirements Definition and the Vision.
 
 ## Traceability
 
@@ -48,7 +48,7 @@ In code, the doc comment of every public item starts with its API ID, and every 
 - Everything is written in **Rust**; the engine is **Bevy**.
 - Editor UI: **bevy_ui + bevy_feathers with the default dark theme**, unchanged; UI language **English**.
 - Editor view is **2D**; 3D is seen inside the game through **remote debug** (BRP, `127.0.0.1:15702`).
-- One **`.noetic.ron`** file per species, loaded by the game through **`noetic_runtime`**.
+- One **`.noetic.ron`** file per species, loaded by the game through **`noetic`**.
 - License **MIT OR Apache-2.0**.
 
 Open questions are listed in the Requirements Definition §10.1.

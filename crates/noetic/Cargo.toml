@@ -1,6 +1,6 @@
 [package]
-name = "noetic_runtime"
-description = "The crate a Bevy game adds to run Noetic animals: re-exports noetic_core and noetic_bevy."
+name = "noetic"
+description = "Game animals that feel alive, for Bevy: the plugin, components, .noetic.ron loading and animation events. Re-exports noetic_core."
 version.workspace = true
 edition.workspace = true
 license.workspace = true

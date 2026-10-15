@@ -1289,7 +1289,7 @@ function renderSpe(){const el=$('#c-spe'),sp=SPECIES[S.sp];
  el.innerHTML=`<div class="ctool"><span class="title"><span class="dot" style="width:12px;height:12px;background:${sp.color}"></span><input class="bigname" id="spName" value="${esc(sp.name)}" aria-label="Species name" style="font-size:16px;height:34px"></span>
   <span class="help" style="font-size:12px">${AG.filter(a=>a.sp===S.sp).length} in the world</span><span style="flex:1"></span>
   <button class="btn" data-act="goBeh" data-tip="${tip('Edit brain','Opens the behavior graph of this species.')}">${ic('graph','s')}Edit brain</button>
-  <button class="btn" data-act="export" data-tip="${tip('Export .ron','Generates the file of this species for the game.','The noetic_runtime loads this file.')}">${ic('download','s')}Export .ron</button>
+  <button class="btn" data-act="export" data-tip="${tip('Export .ron','Generates the file of this species for the game.','The noetic crate loads this file.')}">${ic('download','s')}Export .ron</button>
   <button class="btn" data-act="dupSp" data-tip="${tip('Duplicate','Creates a copy you can change without touching this one.')}">${ic('copy','s')}Duplicate</button>
   <button class="ib warn" data-act="delSp" aria-label="Delete species" data-tip="${tip('Delete species','Deletes the species and removes its animals from the world.','Can be undone right after.')}" style="border-color:rgba(171,64,81,.35);color:#D98A97">${ic('trash','s')}</button></div>
  <div class="cview"><div class="scroll"><div class="wrapc">
@@ -1499,12 +1499,12 @@ ${sp.acts.filter(a=>ACTS[a]).map(a=>{const A=ACTS[a];return `        "${a}": (na
 )`}
 function openExport(){const sp=SPECIES[S.sp];if(!sp)return;const m=$('#modal');m.hidden=false;
  m.innerHTML=`<div class="dlg" role="dialog" aria-modal="true" aria-labelledby="exT"><div class="dlg-h">${ic('download')}<h2 id="exT">${esc(slug(sp.name))}.noetic.ron</h2><button class="ib ghost" style="margin-left:auto" data-act="closeModal" aria-label="Close">${ic('x')}</button></div>
- <div class="dlg-b"><p class="help">Copy it and save it in <span class="num">assets/ai/</span> of your game. The <span class="num">noetic_runtime</span> loads this file.</p><textarea class="code" id="ronTxt" readonly spellcheck="false">${esc(ronFor(S.sp))}</textarea></div>
+ <div class="dlg-b"><p class="help">Copy it and save it in <span class="num">assets/ai/</span> of your game. The <span class="num">noetic</span> loads this file.</p><textarea class="code" id="ronTxt" readonly spellcheck="false">${esc(ronFor(S.sp))}</textarea></div>
  <div class="dlg-f"><button class="btn" data-act="closeModal">Close</button><button class="btn pri" data-act="copyRon">${ic('copy','s')}Copy</button></div></div>`}
 function openRemote(){const m=$('#modal');m.hidden=false;const st=REMOTE.state;
  m.innerHTML=`<div class="dlg" role="dialog" aria-modal="true" aria-labelledby="rT"><div class="dlg-h">${ic('plug')}<h2 id="rT">Connect to game</h2><button class="ib ghost" style="margin-left:auto" data-act="closeModal" aria-label="Close">${ic('x')}</button></div>
  <div class="dlg-b"><p class="help" style="margin-top:14px">With the editor connected to the game, you see the animals in 3D with the real models and animations. The brain, needs and scores show up live here in the editor.</p>
- <ol class="help" style="padding-left:18px"><li>In the game’s <span class="num">Cargo.toml</span>, enable the <span class="num">debug</span> feature of <span class="num">noetic_runtime</span>.</li><li>Run the game.</li><li>Click Connect.</li></ol>
+ <ol class="help" style="padding-left:18px"><li>In the game’s <span class="num">Cargo.toml</span>, enable the <span class="num">debug</span> feature of <span class="num">noetic</span>.</li><li>Run the game.</li><li>Click Connect.</li></ol>
  <label class="fld" for="rAddr">Game address</label><div style="display:flex;gap:8px"><input class="inp num" id="rAddr" value="${esc(REMOTE.addr)}" style="max-width:260px"><button class="btn pri" data-act="tryConnect" ${st==='searching'?'disabled':''}>${ic('plug','s')}${st==='searching'?'Searching…':'Connect'}</button></div>
  ${st==='fail'?`<p class="help" style="margin-top:12px;color:#AB4051">No game answered at ${esc(REMOTE.addr)}. Check that the game is running with the debug feature and that the port matches. In this prototype there is no game to connect to.</p>`:''}</div>
  <div class="dlg-f"><button class="btn" data-act="closeModal">Close</button></div></div>`}

@@ -3,7 +3,7 @@
 version = 4
 
 [[package]]
-name = "noetic_bevy"
+name = "noetic"
 version = "0.0.1"
 
 [[package]]
@@ -12,8 +12,4 @@ version = "0.0.1"
 
 [[package]]
 name = "noetic_editor"
-version = "0.0.1"
-
-[[package]]
-name = "noetic_runtime"
 version = "0.0.1"

@@ -15,7 +15,7 @@ The first version focuses on four species, each with a very different way of liv
 | Boar | Strong omnivore, in a sounder | Roots the ground for food, wallows in mud, may face or charge |
 | Bird | Small, switches between ground and air | Hops on the ground pecking, flies to branches, sings, the flock takes off together |
 
-Behavior is built and tested in the editor, exported to a `.noetic.ron` file and used in the game through the `noetic_runtime` crate. Everything is written in Rust; writing Rust code is optional for users and only needed to extend Noetic.
+Behavior is built and tested in the editor, exported to a `.noetic.ron` file and used in the game through the `noetic` crate. Everything is written in Rust; writing Rust code is optional for users and only needed to extend Noetic.
 
 **Scope.** For now the focus is only these four animals, working really well. More species come over time and, later, humans. Features that humans will need (dialogue, schedules, planning) will be designed when the time comes. For now the core only has to keep that door open: needs, perception, memory and activities are already generic enough to grow.
 
@@ -237,8 +237,7 @@ The editor and the game use the same runtime, so the animal you test in the edit
 | Crate | What it does |
 | --- | --- |
 | `noetic_core` | Needs, perception, memory, fear, reaction graph, activity choice (Utility) and execution (behavior tree). No Bevy |
-| `noetic_bevy` | Plugin, components, systems, `.ron` loading, hot reload, steering and animation events |
-| `noetic_runtime` | Published crate the game imports (re-exports the two above) |
+| `noetic` | The crate the game imports: plugin, components, systems, `.ron` loading, hot reload, steering and animation events; re-exports `noetic_core` |
 | `noetic_editor` | The editor app, does not ship with the game |
 
 **In the game**
@@ -269,7 +268,7 @@ Start with one very well made rabbit and only then multiply: everything the rabb
 6. **Bird.** Flight, perches, singing, flock.
 7. **Boar.** Rooting, mud, fights, and the choice between fleeing and charging.
 8. **Ecosystem.** Interaction between species, day/night, scent marks, health, personalities, reaction test.
-9. **Release.** Remote debug, Rust extension traits, `noetic_runtime` on crates.io, open-source editor, documentation and the example scene with the four species.
+9. **Release.** Remote debug, Rust extension traits, `noetic` and `noetic_core` on crates.io, open-source editor, documentation and the example scene with the four species.
 
 ## Decisions and open questions
 

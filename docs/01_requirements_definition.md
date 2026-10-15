@@ -4,7 +4,7 @@ Version 0.2 · Oct 16, 2026 · @heryk
 
 ## 1. Overview (概要)
 
-Noetic is an open-source editor, built in Rust + Bevy, for creating the behavior of game animals that feel alive. You test everything in a 2D world inside the editor itself and export the result to a `.noetic.ron` file, which the game loads through the `noetic_runtime` crate.
+Noetic is an open-source editor, built in Rust + Bevy, for creating the behavior of game animals that feel alive. You test everything in a 2D world inside the editor itself and export the result to a `.noetic.ron` file, which the game loads through the `noetic` crate.
 
 **Problem.** In Bevy, animal AI is usually written directly in code. Tuning it means recompiling, running the game and reproducing the situation. There is also no visual tool that brings authoring, testing and debugging together.
 
@@ -23,7 +23,7 @@ Noetic is an open-source editor, built in Rust + Bevy, for creating the behavior
 | User | What they need | How they use Noetic |
 | --- | --- | --- |
 | Game designer | Tune behavior without programming | Builds the brain from blocks, adjusts numbers and tests in the World |
-| Game programmer (Bevy) | Integrate the AI into the game and extend it | Adds `noetic_runtime`, loads the `.ron` and writes custom actions and senses in Rust |
+| Game programmer (Bevy) | Integrate the AI into the game and extend it | Adds `noetic`, loads the `.ron` and writes custom actions and senses in Rust |
 | 3D modeler / animator | Know which animations to make | Receives the exported animation list (Markdown/CSV) |
 | Community (public tool) | Create and share species | Creates species and activities and trades `.ron` files |
 
@@ -37,15 +37,14 @@ Noetic is an open-source editor, built in Rust + Bevy, for creating the behavior
 
 ## 3. System overview (システム構成)
 
-![System overview: editor → .noetic.ron → noetic_runtime → game, with remote debug back to the editor](images/system_overview.png)
+![System overview: editor → .noetic.ron → noetic → game, with remote debug back to the editor](images/system_overview.png)
 
 The editor and the game run the same `noetic_core`, so the file is the only thing that crosses over; remote debugging is the way back, for watching the brain inside the real 3D game.
 
 | Crate | Role | Depends on Bevy? |
 | --- | --- | --- |
 | `noetic_core` | Data model, needs, Utility choice, behavior tree, reaction graph, perception; pure `tick` function, testable | No |
-| `noetic_bevy` | Plugin, components, `.noetic.ron` AssetLoader, hot reload, animation events | Yes |
-| `noetic_runtime` | Published facade that games add to `Cargo.toml` (re-exports core + bevy) | Yes |
+| `noetic` | The crate games add to `Cargo.toml`: plugin, components, `.noetic.ron` AssetLoader, hot reload, animation events; re-exports `noetic_core` | Yes |
 | `noetic_editor` | The Bevy UI editor app: Brain, World, Species, Individuals | Yes |
 
 ## 4. Functional requirements (機能要件)
@@ -140,7 +139,7 @@ Each requirement has an ID so it can be cited in tasks and tests. Priority: **A*
 | --- | --- | --- |
 | FR-601 | Export each species as `.noetic.ron` (see section 6) | A |
 | FR-602 | Import `.ron` from a file or pasted text, with a clear message if the file is invalid | A |
-| FR-603 | `noetic_runtime` crate: Bevy plugin, `NoeticAgent` component, asset loader, hot reload and animation events for the game | A |
+| FR-603 | `noetic` crate: Bevy plugin, `NoeticAgent` component, asset loader, hot reload and animation events for the game | A |
 | FR-604 | In-game world components (e.g. `WaterSource`, `Burrow`) so animals can find water and shelter | A |
 | FR-605 | Remote debugging: the editor connects to the running game (feature `debug`, default address 127.0.0.1:15702) and shows the brain live | B |
 | FR-606 | Rust extension: `NoeticAction`, `NoeticCondition`, `NoeticSensor`, `UtilityCurve`; nodes created in code appear in the editor | B |
@@ -337,7 +336,7 @@ Phases are in order; dates are not set yet. Each phase ends with something that 
 | Quirk | A small individual habit (e.g. always flees to the left) |
 | Preset | A saved set of trait values |
 | Scent mark | Urine, gland, latrine, scrape or rub left in the world with a meaning (safe, territory, alert) |
-| Runtime | The `noetic_runtime` crate the game uses |
+| Runtime | The `noetic` crate the game uses (re-exports `noetic_core`) |
 | RON | Rusty Object Notation, the file format |
 | Remote debug | The editor watching a running game's brains live |
 | Sandbox / reaction test | Running the real brain on an isolated copy to see a reaction without touching the world |

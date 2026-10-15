@@ -27,9 +27,9 @@ it is a decision. An exception without one is drift.
 
 ### Workspace
 
-- `noetic_core` never depends on Bevy, `noetic_bevy` depends only on `noetic_core` and Bevy,
-  games use `noetic_runtime` only, and the editor uses `noetic_runtime`, never the internal
-  paths of the other crates (Internal Design › 4 Dependencies, DEP-01 to DEP-07).
+- `noetic_core` never depends on Bevy, and `noetic` depends only on `noetic_core` and Bevy and
+  re-exports `noetic_core`. Games and the editor depend on `noetic` only
+  (Internal Design › 4 Dependencies, DEP-01 to DEP-07).
 - Inside the editor, feature modules (`brain`, `world`, `species`, `individuals`, `io`,
   `remote`) never import each other: they talk through Commands, Events and shared Resources.
 - `#![forbid(unsafe_code)]` in every crate.

@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1344" height="516" viewBox="0 0 1344 516" font-family="Noto Sans, Segoe UI, sans-serif">
+  <rect width="1344" height="516" fill="#fff"/>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" fill="#C9C8BE"/>
+    </marker>
+  </defs>
+  <text x="42" y="58" font-size="24" font-weight="700" fill="#111">One .noetic.ron file carries behavior from the editor into the game</text>
+
+  <g fill="#fff" stroke="#D3D1C7" stroke-width="2">
+    <rect x="42" y="127" width="262" height="213" rx="12"/>
+    <rect x="679" y="127" width="262" height="213" rx="12"/>
+    <rect x="997" y="127" width="262" height="213" rx="12"/>
+  </g>
+  <rect x="360" y="127" width="263" height="213" rx="12" fill="#E4EEF9" stroke="#2F7BD8" stroke-width="3"/>
+
+  <g stroke="#C9C8BE" stroke-width="2" marker-end="url(#arrow)">
+    <line x1="304" y1="233" x2="356" y2="233"/>
+    <line x1="623" y1="233" x2="675" y2="233"/>
+    <line x1="941" y1="233" x2="993" y2="233"/>
+  </g>
+  <path d="M1128,340 V403 H173 V345" fill="none" stroke="#C9C8BE" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+
+  <g text-anchor="middle" font-size="19">
+    <g font-size="21" font-weight="700" fill="#111">
+      <text x="173" y="169">noetic_editor</text>
+      <text x="491" y="169">.noetic.ron</text>
+      <text x="810" y="169">noetic</text>
+      <text x="1128" y="169">Your Bevy game</text>
+    </g>
+    <g fill="#555">
+      <text x="173" y="212">Brain · World</text>
+      <text x="173" y="240">Species</text>
+      <text x="173" y="268">Individuals</text>
+      <text x="173" y="311">runs noetic_core</text>
+    </g>
+    <g fill="#111">
+      <text x="491" y="212">species data</text>
+      <text x="491" y="240">brain graph</text>
+      <text x="491" y="268">activities</text>
+      <text x="491" y="296">animation clips</text>
+    </g>
+    <text x="810" y="212" fill="#111">NoeticPlugin</text>
+    <text x="810" y="240" fill="#555">loader, hot reload</text>
+    <text x="810" y="283" fill="#111">noetic_core</text>
+    <text x="810" y="311" fill="#555">re-exported · no Bevy</text>
+    <g fill="#555">
+      <text x="1128" y="212">NoeticAgent</text>
+      <text x="1128" y="240">WaterSource, Burrow</text>
+      <text x="1128" y="268">3D models</text>
+      <text x="1128" y="296">animation events</text>
+    </g>
+    <text x="650" y="446" fill="#555">remote debug: the editor shows the live brain of the running game (feature debug)</text>
+  </g>
+</svg>
