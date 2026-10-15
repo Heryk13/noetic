@@ -8,6 +8,8 @@ repository.workspace = true
 readme = "../../README.md"
 keywords.workspace = true
 categories.workspace = true
+# ships as source in a game's tools/ folder through create-bevy-starter, never from crates.io
+publish = false
 
 [lints]
 workspace = true
