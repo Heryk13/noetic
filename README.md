@@ -8,7 +8,7 @@ Behavior is built and tested in a 2D editor, exported to a `.noetic.ron` file an
 
 ## Documentation
 
-Everything is in [docs/](docs/README.md): vision, requirements definition (要件定義), basic design (基本設計書), external design (外部設計書), internal design (内部設計書), detailed design (詳細設計書) and the clickable prototype.
+Everything is in [docs/](docs/README.md): vision, requirements definition, basic design, external design, internal design, detailed design and the clickable prototype.
 
 ## License
 

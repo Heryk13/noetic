@@ -2,14 +2,14 @@
 
 All project documents, in reading order. Each one builds on the previous one.
 
-| # | Document | Japanese name | Format | What it answers |
-| --- | --- | --- | --- | --- |
-| 0 | [Vision](00_vision.md) | — | Markdown | What we are building and why: living wildlife, the four species, how animals decide |
-| 1 | [Requirements Definition](01_requirements_definition.md) | 要件定義 | Markdown | What the system must do: functional (FR-xxx) and non-functional (NFR-xx) requirements, data, screens, milestones, open issues |
-| 2 | [Basic Design](02_basic_design.xlsx) | 基本設計書 | Excel | How the whole system is built: architecture, crates, function list (F-xxx), processing order (PRC-xx), data, file formats, external interfaces, UI policy |
-| 3 | [External Design](03_external_design.xlsx) | 外部設計書 | Excel | What the user sees: every screen with annotated screenshots and numbered items (SCR-nn-mm), transitions, messages, shortcuts |
-| 4 | [Internal Design](04_internal_design.xlsx) | 内部設計書 | Excel | How the Rust program is organized: workspace, modules (MOD-xxx), types, Bevy ECS, state machines, sequences, errors, tests |
-| 5 | [Detailed Design](05_detailed_design.xlsx) | 詳細設計書 | Excel | Every function (API-xxx): signature, processing, errors; item → API map; algorithms (ALG-xx); data schema; unit tests |
+| # | Document | Format | What it answers |
+| --- | --- | --- | --- |
+| 0 | [Vision](00_vision.md) | Markdown | What we are building and why: living wildlife, the four species, how animals decide |
+| 1 | [Requirements Definition](01_requirements_definition.md) | Markdown | What the system must do: functional (FR-xxx) and non-functional (NFR-xx) requirements, data, screens, milestones, open issues |
+| 2 | [Basic Design](02_basic_design.xlsx) | Excel | How the whole system is built: architecture, crates, function list (F-xxx), processing order (PRC-xx), data, file formats, external interfaces, UI policy |
+| 3 | [External Design](03_external_design.xlsx) | Excel | What the user sees: every screen with annotated screenshots and numbered items (SCR-nn-mm), transitions, messages, shortcuts |
+| 4 | [Internal Design](04_internal_design.xlsx) | Excel | How the Rust program is organized: workspace, modules (MOD-xxx), types, Bevy ECS, state machines, sequences, errors, tests |
+| 5 | [Detailed Design](05_detailed_design.xlsx) | Excel | Every function (API-xxx): signature, processing, errors; item → API map; algorithms (ALG-xx); data schema; unit tests |
 
 The Excel files are made for LibreOffice Calc (they also open in Excel). Each workbook starts with a Cover, a Revision History and a Contents sheet with links.
 

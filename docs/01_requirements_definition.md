@@ -1,8 +1,8 @@
-# Noetic — Requirements Definition (要件定義)
+# Noetic — Requirements Definition
 
 Version 0.3 · Oct 16, 2026 · @heryk
 
-## 1. Overview (概要)
+## 1. Overview
 
 Noetic is an open-source editor, built in Rust + Bevy, for creating the behavior of game animals that feel alive. You test everything in a 2D world inside the editor itself and export the result to a `.noetic.ron` file, which the game loads through the `noetic` crate.
 
@@ -18,7 +18,7 @@ Noetic is an open-source editor, built in Rust + Bevy, for creating the behavior
 - Clickable prototype (HTML): [prototype/noetic_prototype.html](prototype/noetic_prototype.html), version 21 (English UI, Bevy Feathers default theme), 2026-10-16
 - Design documents: [Basic Design](02_basic_design.xlsx) · [External Design](03_external_design.xlsx) · [Internal Design](04_internal_design.xlsx) · [Detailed Design](05_detailed_design.xlsx)
 
-## 2. Users (対象ユーザー) and assumptions (前提条件)
+## 2. Users and assumptions
 
 | User | What they need | How they use Noetic |
 | --- | --- | --- |
@@ -35,7 +35,7 @@ Noetic is an open-source editor, built in Rust + Bevy, for creating the behavior
 - In-game navigation and pathfinding use existing crates (navmesh). Noetic does not implement its own 3D navigation.
 - Rust code is optional: everything can be done in the editor, and programmers can extend it.
 
-## 3. System overview (システム構成)
+## 3. System overview
 
 ![System overview: editor → .noetic.ron → noetic → game, with remote debug back to the editor](images/system_overview.png)
 
@@ -47,7 +47,7 @@ The editor and the game run the same `noetic_core`, so the file is the only thin
 | `noetic` | The crate games add to `Cargo.toml`: plugin, components, `.noetic.ron` AssetLoader, hot reload, animation events; re-exports `noetic_core` | Yes |
 | `noetic_editor` | The Bevy UI editor app: Brain, World, Species, Individuals | Yes |
 
-## 4. Functional requirements (機能要件)
+## 4. Functional requirements
 
 Each requirement has an ID so it can be cited in tasks and tests. Priority: **A** = v1 must-have, **B** = v1 nice-to-have, **C** = after v1. All A and B requirements are already demonstrated in the prototype.
 
@@ -156,7 +156,7 @@ Each requirement has an ID so it can be cited in tasks and tests. Priority: **A*
 | FR-706 | Bevy Feathers default dark theme, unchanged (no custom styling); danger marked with the Feathers X-axis red; colored map | A |
 | FR-707 | Undo for destructive actions (delete species, folder, terrain, preset) | A |
 
-## 5. Non-functional requirements (非機能要件)
+## 5. Non-functional requirements
 
 | ID | Category | Requirement | Prio. |
 | --- | --- | --- | --- |
@@ -173,7 +173,7 @@ Each requirement has an ID so it can be cited in tasks and tests. Priority: **A*
 | NFR-11 | Safety of edits | Every destructive action can be undone; the reaction test runs on an isolated copy and never changes the world | A |
 | NFR-12 | Robustness | An invalid `.ron` or a broken graph shows a clear message and never crashes the editor or the game | A |
 
-## 6. Data requirements (データ要件)
+## 6. Data requirements
 
 ### 6.1 Main entities
 
@@ -236,7 +236,7 @@ Values follow the built-in rabbit of the prototype (the 60 / 40 branch and the s
 - **Animation list for the 3D designer:** one row per animation event — event, what the animal does, duration, loop, where it is used, mapped clip — as Markdown or CSV.
 - **Remote debug stream:** live agent state (current block, needs, fear, health) sent from the game to the editor; read-only.
 
-## 7. Screen requirements (画面要件)
+## 7. Screen requirements
 
 ### 7.1 Layout
 
@@ -271,7 +271,7 @@ Values follow the built-in rabbit of the prototype (the 60 / 40 branch and the s
 
 The editor uses Bevy's own editor widgets (bevy_feathers) with the default dark theme, unchanged, so the UI needs as little code as possible: Feathers palette (window #1F1F24, panes #2A2A2E, accent #206EC9), 24 px rows, 4 px corners, Fira Sans / Fira Mono. Danger is marked with the Feathers X-axis red (#AB4051). The world map keeps its own colors so terrain and species are easy to tell apart. The UI language is English.
 
-## 8. Constraints (制約条件) and out of scope (対象外)
+## 8. Constraints and out of scope
 
 **Constraints**
 
@@ -291,7 +291,7 @@ The editor uses Bevy's own editor widgets (bevy_feathers) with the default dark 
 | Predators hunting prey | Open question (section 10) |
 | Saved test cases that run automatically (FR-407) | Priority C |
 
-## 9. Milestones (マイルストーン)
+## 9. Milestones
 
 Phases are in order; dates are not set yet. Each phase ends with something that runs.
 
@@ -307,7 +307,7 @@ Phases are in order; dates are not set yet. Each phase ends with something that 
 | M8 | Ecosystem | Day/night routines, scent marks, cross-species alarms, health, personalities and presets, reaction test |
 | M9 | Release | Remote debug, Rust extension traits, docs, crates.io publish, editor binaries |
 
-## 10. Open issues (課題・未決事項) and glossary (用語集)
+## 10. Open issues and glossary
 
 ### 10.1 Open issues
 
