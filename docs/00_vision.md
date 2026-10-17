@@ -1,6 +1,6 @@
 # Noetic — Living Wildlife (Vision)
 
-Version 0.4 · Oct 17, 2026 · @heryk
+Version 0.5 · Oct 17, 2026 · @heryk
 
 ## Goal
 
@@ -195,7 +195,7 @@ The way an animal moves is half of the realism: Noetic decides what the animal d
 
 **Animation**
 
-- Noetic emits animation events (`sniff`, `stand_alert`, `graze`, `groom`, `dig`…) and the game maps each one to a clip of its model
+- Noetic emits animation events (`sniff`, `stand_alert`, `graze`, `groom`, `dig`…) and each one carries the clip of the model chosen in the editor's 3D model tab, which the game plays
 - The editor exports the list of animation events for the 3D designer (Markdown or CSV)
 - The animal's speed is exposed for the walk/trot/run blend
 - Gaze direction (head turning to a sound) is exposed for the game to apply to the skeleton
@@ -250,12 +250,12 @@ commands.spawn((
 ));
 ```
 
-- The game maps animation events to the model's clips
-- World points and zones (water, burrow, mud, tall grass, perch) are marked with components such as `WaterSource`, `Burrow` and `Cover`, with a radius, which the animals find on their own; unmarked ground is open ground
+- The game plays the clip that comes with each animation event (mapped in the editor)
+- World points and zones (water, burrow, mud, tall grass, trees to perch on) are marked with components such as `WaterSource`, `Burrow` and `Cover`, with a radius, which the animals find on their own; unmarked ground is open ground
 - The game moves each animal from its `MoveIntent` with its own navigation
 - Rust code is optional: you can create your own actions, senses and reactions when the editor is not enough
 
-**Memory (blackboard):** each animal keeps its own memory (`hunger`, `threat`, `last_water_seen`…) that the senses write and the decisions read.
+**Memory (blackboard):** each animal keeps its own memory (`last_water_seen`, `scare_spots`, `habituation`…) that the senses write and the decisions read.
 
 ## Roadmap
 
@@ -284,12 +284,12 @@ Start with one very well made rabbit and only then multiply: everything the rabb
 | Movement | Noetic decides and publishes a movement intent; the game moves the body with its own navigation |
 | Format | One `.ron` per species |
 | License | MIT/Apache-2.0, editor and runtime open source |
+| Death | Noetic emits a death event and stops the animal; the game decides whether the body stays, despawns or respawns |
 
-**Open** (tracked as Q1–Q5 and Q7 in the Requirements Definition)
+**Open** (tracked as Q1–Q5 in the Requirements Definition)
 
 - [ ] Is the game 3D with large terrain, or something smaller? Affects navigation and how many animals run at the same time
 - [ ] How many simultaneous animals are expected (dozens or hundreds)? Decides whether animals far from the player run in a simplified mode
 - [ ] Do predators (wolf, fox) come later, or is the player the only threat?
 - [ ] Hunting: can the player hunt? This changes how much to invest in escape and injuries
 - [ ] Does a herd share one memory, or only pass alarms?
-- [ ] Is death permanent in the game?

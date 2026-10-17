@@ -1,6 +1,6 @@
 # Noetic — Requirements Definition
 
-Version 0.4 · Oct 17, 2026 · @heryk
+Version 0.8 · Oct 17, 2026 · @heryk
 
 ## 1. Overview
 
@@ -49,7 +49,7 @@ The editor and the game run the same `noetic_core`, so the file is the only thin
 
 ## 4. Functional requirements
 
-Each requirement has an ID so it can be cited in tasks and tests. Priority: **A** = v1 must-have, **B** = v1 nice-to-have, **C** = after v1. All A and B requirements are already demonstrated in the prototype.
+Each requirement has an ID so it can be cited in tasks and tests. Priority: **A** = v1 must-have, **B** = v1 nice-to-have, **C** = after v1. All A and B editor requirements are already demonstrated in the prototype; the game-side ones (the game part of FR-509, FR-603…606) are not, since they run inside a Bevy game.
 
 ### 4.1 Brain (behavior editor)
 
@@ -60,15 +60,15 @@ Each requirement has an ID so it can be cited in tasks and tests. Priority: **A*
 | FR-103 | Connection rules (e.g. Choose activity only connects to activities), cycle blocking, and a message explaining why | A |
 | FR-104 | Warning for loose blocks that never run because they are not connected to the start | A |
 | FR-105 | Branching reactions: several outputs with a % chance, typed or set by slider; always sums to 100% and the % is shown on the line | A |
-| FR-106 | Reaction paths can merge back into the same reaction (acyclic graph) | B |
+| FR-106 | Reaction paths can merge back into the same reaction (acyclic graph) | A |
 | FR-107 | Activity opened as a subgraph: Start + steps in sequence | A |
 | FR-108 | Step with type, random min–max duration and an editable animation event | A |
-| FR-109 | Activity with the need that drives it, a curve (linear, accelerating, fast start, on/off), a weight and a curve chart with the current value | A |
+| FR-109 | Activity with the need that drives it, a curve (linear, accelerating, fast start, step (on/off), or a custom curve from Rust), a weight and a curve chart with the current value | A |
 | FR-110 | Random choice variation per species (0–40%) | A |
 | FR-111 | Drag activities, reactions and steps from the library into the graph; double-click adds at the end | A |
 | FR-112 | "Follow animal": live-highlight the block an animal is running; if there is no animal, a button to spawn one | A |
-| FR-113 | Live score of each activity on its block | B |
-| FR-114 | Warning when an activity is shared by several species | B |
+| FR-113 | Live score of each activity on its block | A |
+| FR-114 | Warning when an activity is shared by several species | A |
 | FR-115 | Zoom, fit and pan the graph canvas | A |
 
 ### 4.2 World (test playground)
@@ -110,7 +110,7 @@ Each requirement has an ID so it can be cited in tasks and tests. Priority: **A*
 
 | ID | Requirement | Prio. |
 | --- | --- | --- |
-| FR-401 | Each animal has its own personality generated from a seed: Fear, Curiosity, Sociable, Appetite, Energy, Stubbornness and Aggressive ("Briguento") | A |
+| FR-401 | Each animal has its own personality generated from a seed: Fear, Curiosity, Sociable, Appetite, Energy, Stubbornness and Aggressive | A |
 | FR-402 | Radar comparing the individual with the species average; traits editable by hand; apply a preset | A |
 | FR-403 | Re-roll and lock the personality | A |
 | FR-404 | Per-individual quirks (e.g. "always flees to the left"), add and remove | A |
@@ -122,12 +122,12 @@ Each requirement has an ID so it can be cited in tasks and tests. Priority: **A*
 
 | ID | Requirement | Prio. |
 | --- | --- | --- |
-| FR-501 | Needs (hunger, thirst, fatigue, heat, urge to sing, urge to mark, urge to fight) rise over time and drop with the right activity | A |
+| FR-501 | Needs (hunger, thirst, fatigue, heat, safety, company, curiosity, boredom, calm, urge to sing, urge to mark, urge to fight) rise with time, the hour or the place and drop with the right activity; fear also drives activities such as keeping watch | A |
 | FR-502 | Perception with range, angle, light, cover (tall grass), target movement and wind | A |
 | FR-503 | Fear grows according to personality; above the threshold the animal follows the reaction graph | A |
 | FR-504 | Spreading alarms: foot thumping, raised tail, chirping; other species also become alert | A |
 | FR-505 | Groups with a leader (herd, flock) that walk, graze and flee together | A |
-| FR-506 | Scent marking (urine, gland, latrine, scrape, rubbing); near its own marks fear drops faster | A |
+| FR-506 | Scent marking (urine, chin gland, latrine, scrape, antler rub, body rub); near its own Safe marks fear drops faster | A |
 | FR-507 | Fights between animals of the same species, driven by Aggressive and Stubbornness: the other fights back or flees | A |
 | FR-508 | Health: damage from fights and charges, pain that causes fear, healing (faster when resting), limping and death | A |
 | FR-509 | Per-species movement intent: destination, gait (hops with pauses, zigzag escape, flight and perching), desired speed and gaze; the game moves the body and can report an unreachable destination. In the editor a simple mover does it, where terrain changes speed (river, hill) and ponds block | A |
@@ -179,10 +179,10 @@ Each requirement has an ID so it can be cited in tasks and tests. Priority: **A*
 
 | Entity | What it holds | Where it lives |
 | --- | --- | --- |
-| Species | Name, color, movement (ground/bird), group type, shelter, speeds, senses, needs rates, fear threshold, health, base personality, routine, scent marks, brain, animation clips | `.noetic.ron` (one per species) |
-| Activity | Driving need, curve, weight, steps (type, min–max seconds, animation event) | Inside the species file; shared activities are copied per species |
-| Reaction | Action (freeze, alert, alarm, flee, hide, charge…), next reactions with weights | Inside the species brain (reaction graph) |
-| Agent (individual) | Seed, traits, quirks, lock flag, health, needs, memory | Runtime only (spawned by the game); not exported |
+| Species | Name, color, movement (ground/bird), group type, shelter, speeds, senses, needs rates, fear threshold, health, base personality, routine, scent marks, brain, animation clips | `.noetic.ron` (one per species) and the editor project |
+| Activity | Driving need, curve, weight, steps (type, min–max seconds, animation event) | Shared in the editor project; copied into each species file on export |
+| Reaction | Action (freeze, sniff the air, alarm, flee, hide, charge, take off…), next reactions with weights | Inside the species brain (reaction graph) |
+| Agent (individual) | Seed, traits, quirks, lock flag, health, needs, memory | Editor project: species, name, seed, position, traits, quirks and lock flag are saved, health, needs and memory start fresh on load. In the game: runtime only (spawned by the game); never exported |
 | Personality preset | Name + trait values | Editor project |
 | World | Terrain, water, river path, objects, wind, time of day | Editor project only; in the game the world comes from game components (`WaterSource`, `Burrow`…) |
 
@@ -193,7 +193,7 @@ NoeticSpecies(
   schema_version: 1,
   species: "rabbit",
   color: "#D8D2C4",
-  locomotion: Ground(hop: true, speed: 2.4, flee_speed: 9.0),
+  locomotion: (kind: Ground, hop: true, speed: 2.4, flee_speed: 9.0),
   group: Solitary,
   shelter: Burrow,
   routine: Crepuscular,
@@ -204,7 +204,7 @@ NoeticSpecies(
     base:      { "fear": 78, "curiosity": 38, "social": 30, "appetite": 50, "energy": 60, "stubborn": 30, "aggro": 25 },
     variation: { "fear": 18, "curiosity": 30, "social": 15, "appetite": 15, "energy": 15, "stubborn": 15, "aggro": 22 },
   ),
-  scent_marks: [ (kind: Urine, meaning: Safe, every_min: 40.0, lasts_h: 48.0) ],
+  scent_marks: (enabled: true, kinds: [Urine, Chin, Latrine], meaning: [Safe], every_min: 40.0, lasts_h: 48.0),
   brain: (
     threat: (
       first: [("freeze", 60), ("flee", 40)],
@@ -224,12 +224,13 @@ NoeticSpecies(
       (do: Watch,      secs: (1.0, 2.5), anim: "watch"),
       (do: Eat,        secs: (2.0, 4.0), anim: "graze"),
     ]),
+    // drink, rest, watch, groom, dig and mark follow the same shape
   },
   animation_clips: { "graze": "Rabbit_Eat", "watch": "Rabbit_Stand", "drink": "Rabbit_Drink" },
 )
 ```
 
-Values follow the built-in rabbit of the prototype (the 60 / 40 branch and the shortened option list are examples); the full schema with ranges and defaults is in the Detailed Design (sheet 6). Numbers can be tuned. Rules: weights in each `first`/`next` list sum to 100; reaction ids must exist; the reaction graph has no cycles; unknown fields are rejected with a message naming the line (NFR-12).
+Values follow the built-in rabbit of the prototype (the 60 / 40 branch and the shortened activity map are examples; only hunger, thirst and fatigue have a rate, the other needs follow the hour, the place or the animal's state); the full schema with ranges and defaults is in the Detailed Design (sheet 6). Numbers can be tuned. Rules: weights in each `first`/`next` list sum to 100 (a file that misses it is normalised with a warning); reaction ids must exist; the reaction graph has no cycles; unknown fields are rejected with a message naming the line (NFR-12).
 
 ### 6.3 Other exports
 
@@ -251,8 +252,8 @@ Values follow the built-in rabbit of the prototype (the 60 / 40 branch and the s
 
 ### 7.2 Areas
 
-- **Brain** — species tabs, graph canvas with zoom/fit, library of activities/reactions/steps, Follow animal, warnings for loose blocks; double-click an activity to open its step subgraph.
-- **World** — colored map with minimap and legend, tools (Select, Test player, Noise, Food, Add animal), layers, wind, world editing brushes, animal panel with tests (thirst, hunger, tire, calm, noise, scare, injure, heal).
+- **Brain** — species tree, graph canvas with zoom/fit, library of activities/reactions/steps, Follow animal, warnings for loose blocks; double-click an activity to open its step subgraph.
+- **World** — colored map with minimap, tools (Select, Test player, Noise, Food, Add animal), layers, wind, world editing brushes, animal panel with tests (thirst, hunger, tire, calm, noise, scare, injure, heal).
 - **Species** — four tabs: Body (color, movement, group, shelter, health, locomotion), Mind (senses, needs, base personality and presets), Routine & territory (routine, scent marks), 3D model (event → clip, animation list).
 - **Individuals** — list of spawned animals; card with radar + traits, presets, re-roll and lock, quirks, memory; reaction test with situation builder and per-individual results.
 
@@ -319,7 +320,7 @@ Phases are in order; dates are not set yet. Each phase ends with something that 
 | Q4 | Player hunting | Does the runtime need hit/damage events from the player's weapons? |
 | Q5 | Shared group memory | Should a herd share one blackboard (e.g. a danger spot) or only pass alarms? |
 | Q6 | UI language | **Decided:** English. Labels and messages go through a localization table so other languages can be added later |
-| Q7 | Death in the game | Is death permanent, does the game respawn, or is it left to the game? |
+| Q7 | Death in the game | **Decided:** left to the game. Noetic emits `NoeticDied` and stops the agent; the game removes, keeps or respawns the body |
 | Q8 | Danger color | **Decided:** Feathers X-axis red (#AB4051) as a marker only |
 
 ### 10.2 Glossary
@@ -336,7 +337,7 @@ Phases are in order; dates are not set yet. Each phase ends with something that 
 | Trait | A personality value 0–100 (Fear, Curiosity, Sociable, Appetite, Energy, Stubbornness, Aggressive) |
 | Quirk | A small individual habit (e.g. always flees to the left) |
 | Preset | A saved set of trait values |
-| Scent mark | Urine, gland, latrine, scrape or rub left in the world with a meaning (safe, territory, alert) |
+| Scent mark | Urine, chin gland, latrine, scrape, antler rub or body rub left in the world with a meaning (safe, territory, alert) |
 | Runtime | The `noetic` crate the game uses (re-exports `noetic_core`) |
 | RON | Rusty Object Notation, the file format |
 | Remote debug | The editor watching a running game's brains live |

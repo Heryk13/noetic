@@ -3,10 +3,12 @@ sequenceDiagram
   participant P as NoeticPlugin systems
   participant C as noetic_core
   participant A as Game animation
-  G->>P: FixedUpdate
-  P->>P: Sync: read WaterSource, Burrow, Player… into WorldViewCache
-  P->>C: Think (round robin, think_hz): needs, perceive, memory, fear
-  C->>C: threat_branch / choose_activity (seeded Rng)
-  P->>C: Act: run_step, locomotion (every frame)
-  C-->>P: SimEvents (Anim, Alarm, Death)
-  P-->>A: NoeticAnimEvent{entity, event, clip, looping}
+  G->>P: FixedUpdate (60 Hz)
+  P->>P: Sync: clock, world markers, positions → WorldViewCache
+  P->>C: Think (agents with think_due, dt = THINK_DT): needs, perceive, memory, fear
+  C->>C: threat_branch / choose_activity (agent Rng), effects and SimEvents into its Outbox
+  P->>C: Act (every fixed step): run_step, follow_group, fight, leave_mark, locomotion
+  C-->>P: Movement → MoveIntent (the game moves the body)
+  P->>C: Apply: effects sorted by (source, seq) → apply_effect on each receiver
+  C-->>P: SimEvents drained from every Outbox in AgentOrder
+  P-->>A: Events: NoeticAnimEvent{entity, event, clip, looping}, NoeticAlarm, NoeticDied

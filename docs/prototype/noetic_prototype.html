@@ -825,7 +825,7 @@ const BRUSH={move:{n:'Move',ic:'cursor',d:'Drag anything on the terrain. Click t
  bush:{n:'Bush',ic:'bush',arr:'bushes',make:p=>({x:p.x,y:p.y,r:3}),d:'Shelter for deer and boar to rest and flee to.'},
  rock:{n:'Rock',ic:'rock',arr:'rocks',make:p=>({x:p.x,y:p.y,r:1.2}),d:'The rabbit marks it with its chin gland.'},
  burrow:{n:'Burrow',ic:'home',arr:'burrows',make:p=>({x:p.x,y:p.y}),d:'Rabbit home: it rests and hides here.'},
- pond:{n:'Lake',ic:'drop',arr:'ponds',make:p=>({x:p.x,y:p.y,rx:8,ry:5,name:'New lake'}),d:'Water to drink. Nobody swims across.'},
+ pond:{n:'Pond',ic:'drop',arr:'ponds',make:p=>({x:p.x,y:p.y,rx:8,ry:5,name:'New pond'}),d:'Water to drink. Nobody swims across.'},
  mud:{n:'Mud',ic:'mud',arr:'muds',make:p=>({x:p.x,y:p.y,rx:5,ry:3}),d:'The boar wallows when it is hot.'},
  grass:{n:'Tall grass',ic:'grass',arr:'grass',make:p=>({x:p.x,y:p.y,rx:10,ry:5}),d:'Hides: the player here is seen at 40% of the distance.'},
  clover:{n:'Clover',ic:'leaf',arr:'clover',make:p=>({x:p.x,y:p.y,r:3}),d:'Favorite rabbit food.'},
@@ -852,7 +852,7 @@ function drawEditOverlay(){const c=cx,s=SC();
 function renderEditInsp(){const el=$('#props'),h=S.wsel;$('#inspHead').textContent='Details · terrain';
  if(!h){const cnt=Object.entries(ARRNAME).map(([k,b])=>`<span>${ic(BRUSH[b].ic,'s')}</span><span>${BRUSH[b].n}: <b>${W[k].length}</b></span>`).join('');
   el.innerHTML=`<div class="ptitle">${ic('edit')}<b style="font-size:16px">Editing the world</b></div>
-  <ol class="help" style="padding-left:18px;margin:10px 0 0"><li>Pick something in the top bar (Tree, Burrow, Lake…) and click the map to place it.</li><li>With <b>Move</b>, drag things around and click one to change its size here.</li><li>The blue dots on the river change its course.</li><li>The animals keep living: see how they react to the new terrain.</li></ol>
+  <ol class="help" style="padding-left:18px;margin:10px 0 0"><li>Pick something in the top bar (Tree, Burrow, Pond…) and click the map to place it.</li><li>With <b>Move</b>, drag things around and click one to change its size here.</li><li>The blue dots on the river change its course.</li><li>The animals keep living: see how they react to the new terrain.</li></ol>
   <div class="h">${ic('layers','s')}On the map now</div><div class="legend">${cnt}<span>${ic('drop','s')}</span><span>River: <b>${W.river.length>1?'yes':'no'}</b></span></div>
   <div style="display:flex;flex-direction:column;gap:8px;margin-top:16px"><button class="btn" data-act="worldReset" data-tip="${tip('Restore default world','Resets the terrain to the original.','The animals stay; burrows are reassigned.')}">${ic('reroll','s')}Restore default world</button>
   <button class="btn warn" data-act="worldClear" data-tip="${tip('Clear terrain','Removes everything: trees, burrows, water, mud, grass and the river.','Good for building a test scene from scratch. Can be undone.')}">${ic('trash','s')}Clear terrain</button></div>`;return}
@@ -1199,7 +1199,7 @@ function renderDbgHead(){const a=selAgent(),el=$('#dbgHead');if(!el)return;
  if(!a){el.innerHTML=`<p class="help" style="margin-top:0">No animal selected. Click an animal on the map or in the list on the left.</p>
   <div class="h">${ic('layers','s')}Map legend</div><div class="legend">
   <span class="sw" style="background:#171D10;border:1px solid #6b5a40"></span><span>Rabbit burrow</span>
-  <span class="sw" style="background:#3F5C66"></span><span>Water: lakes and river (the river slows animals down)</span>
+  <span class="sw" style="background:#3F5C66"></span><span>Water: ponds and river (the river slows animals down)</span>
   <span class="sw" style="background:#5A4732"></span><span>Mud (boar wallows)</span>
   <span class="sw" style="background:repeating-linear-gradient(115deg,#16220f 0 2px,#3F4D30 2px 5px)"></span><span>Tall grass: hides</span>
   <span class="sw" style="background:#24321C;border-radius:50%"></span><span>Trees and woods: perch, rubbing</span>
@@ -1500,7 +1500,7 @@ ${sp.acts.filter(a=>ACTS[a]).map(a=>{const A=ACTS[a];return `        "${a}": (na
 function openExport(){const sp=SPECIES[S.sp];if(!sp)return;const m=$('#modal');m.hidden=false;
  m.innerHTML=`<div class="dlg" role="dialog" aria-modal="true" aria-labelledby="exT"><div class="dlg-h">${ic('download')}<h2 id="exT">${esc(slug(sp.name))}.noetic.ron</h2><button class="ib ghost" style="margin-left:auto" data-act="closeModal" aria-label="Close">${ic('x')}</button></div>
  <div class="dlg-b"><p class="help">Copy it and save it in <span class="num">assets/ai/</span> of your game. The <span class="num">noetic</span> loads this file.</p><textarea class="code" id="ronTxt" readonly spellcheck="false">${esc(ronFor(S.sp))}</textarea></div>
- <div class="dlg-f"><button class="btn" data-act="closeModal">Close</button><button class="btn pri" data-act="copyRon">${ic('copy','s')}Copy</button></div></div>`}
+ <div class="dlg-f"><button class="btn" data-act="closeModal">Close</button><button class="btn" data-act="saveRon">${ic('download','s')}Save…</button><button class="btn pri" data-act="copyRon">${ic('copy','s')}Copy</button></div></div>`}
 function openRemote(){const m=$('#modal');m.hidden=false;const st=REMOTE.state;
  m.innerHTML=`<div class="dlg" role="dialog" aria-modal="true" aria-labelledby="rT"><div class="dlg-h">${ic('plug')}<h2 id="rT">Connect to game</h2><button class="ib ghost" style="margin-left:auto" data-act="closeModal" aria-label="Close">${ic('x')}</button></div>
  <div class="dlg-b"><p class="help" style="margin-top:14px">With the editor connected to the game, you see the animals in 3D with the real models and animations. The brain, needs and scores show up live here in the editor.</p>
@@ -1516,7 +1516,7 @@ function openImport(){const m=$('#modal');m.hidden=false;
  <div class="dlg-f"><button class="btn" data-act="closeModal">Cancel</button><button class="btn pri" data-act="doImport">${ic('check','s')}Import</button></div></div>`;
  $('#impFile').addEventListener('change',e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{$('#impTxt').value=r.result};r.readAsText(f)})}
 function parseRon(t){const g=re=>{const m=t.match(re);return m?m[1]:null},num=re=>{const v=g(re);return v==null?null:parseFloat(v)};
- const name=g(/name:\s*"([^"]+)"/);if(!/NoeticSpecies\s*\(/.test(t)||!name)throw new Error('This does not look like a Noetic species file (missing "NoeticSpecies" or the name).');
+ const name=g(/name:\s*"([^"]+)"/);if(!/NoeticSpecies\s*\(/.test(t)||!name)throw new Error('This is not a valid Noetic species file: missing "NoeticSpecies" or the name.');
  const sp=structuredClone(SP0.coelho);Object.assign(sp,{name,names:[],quirks:[],count:3});
  sp.kind=g(/kind:\s*(\w+)/)==='Bird'?'bird':'ground';sp.group={Solo:'solo',Herd:'herd',Flock:'flock'}[g(/group:\s*(\w+)/)]||'solo';sp.grpSize=sp.group==='solo'?1:sp.group==='flock'?8:4;
  sp.shelter={Burrow:'burrow',Cover:'cover',Tree:'tree'}[g(/shelter:\s*(\w+)/)]||'cover';sp.gait=sp.kind==='bird'?'flutter':sp.shelter==='burrow'?'hop':'walk';
@@ -1676,7 +1676,8 @@ document.addEventListener('click',e=>{
   case'animSheet':openAnimSheet();break;
   case'copySheet':{const ta=$('#sheetTxt');if(navigator.clipboard)navigator.clipboard.writeText(ta.value).then(()=>toast('List copied')).catch(()=>{ta.focus();ta.select();toast('Text selected: use Ctrl+C')});else{ta.focus();ta.select()}break}
   case'closeModal':$('#modal').hidden=true;break;case'createSpecies':createSpecies();break;
-  case'copyRon':{const ta=$('#ronTxt');if(navigator.clipboard)navigator.clipboard.writeText(ta.value).then(()=>toast('Copied')).catch(()=>{ta.focus();ta.select();toast('Text selected: use Ctrl+C')});else{ta.focus();ta.select()}break}
+  case'copyRon':{const ta=$('#ronTxt');if(navigator.clipboard)navigator.clipboard.writeText(ta.value).then(()=>toast('Copied.')).catch(()=>{ta.focus();ta.select();toast('Could not copy. Select the text and press Ctrl+C.')});else{ta.focus();ta.select()}break}
+  case'saveRon':{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([$('#ronTxt').value],{type:'text/plain'}));a.download=$('#exT').textContent;a.click();URL.revokeObjectURL(a.href);break}
  }});
 document.addEventListener('contextmenu',e=>{const n=e.target.closest('[data-node]');if(!n)return;e.preventDefault();nodeMenu(n.dataset.node,e.clientX,e.clientY)});
 document.addEventListener('dragstart',e=>{const p=e.target.closest?.('[data-pal]');if(!p)return;e.dataTransfer.setData('text/plain',p.dataset.pal);e.dataTransfer.effectAllowed='copy';TIP.hidden=true});
