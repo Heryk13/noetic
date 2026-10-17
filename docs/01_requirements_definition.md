@@ -1,6 +1,6 @@
 # Noetic — Requirements Definition
 
-Version 0.3 · Oct 16, 2026 · @heryk
+Version 0.4 · Oct 17, 2026 · @heryk
 
 ## 1. Overview
 
@@ -32,7 +32,7 @@ Noetic is an open-source editor, built in Rust + Bevy, for creating the behavior
 - The target game uses Bevy, at a version pinned per Noetic release.
 - The editor and the game run the same runtime: behavior tested in the editor is the same in the game.
 - The editor simulates in top-down 2D. 3D with the real models is viewed through remote debugging, inside the game.
-- In-game navigation and pathfinding use existing crates (navmesh). Noetic does not implement its own 3D navigation.
+- In the game, the game moves the animals (pathfinding, physics) from the movement intent Noetic publishes. Noetic only thinks: it never writes the `Transform` and has no navigation of its own.
 - Rust code is optional: everything can be done in the editor, and programmers can extend it.
 
 ## 3. System overview
@@ -44,7 +44,7 @@ The editor and the game run the same `noetic_core`, so the file is the only thin
 | Crate | Role | Depends on Bevy? |
 | --- | --- | --- |
 | `noetic_core` | Data model, needs, Utility choice, behavior tree, reaction graph, perception; pure `tick` function, testable | No |
-| `noetic` | The crate games add to `Cargo.toml`: plugin, components, `.noetic.ron` AssetLoader, hot reload, animation events; re-exports `noetic_core` | Yes |
+| `noetic` | The crate games add to `Cargo.toml`: plugin, components, `.noetic.ron` AssetLoader, hot reload, movement intents, animation events; re-exports `noetic_core` | Yes |
 | `noetic_editor` | The Bevy UI editor app: Brain, World, Species, Individuals | Yes |
 
 ## 4. Functional requirements
@@ -130,7 +130,7 @@ Each requirement has an ID so it can be cited in tasks and tests. Priority: **A*
 | FR-506 | Scent marking (urine, gland, latrine, scrape, rubbing); near its own marks fear drops faster | A |
 | FR-507 | Fights between animals of the same species, driven by Aggressive and Stubbornness: the other fights back or flees | A |
 | FR-508 | Health: damage from fights and charges, pain that causes fear, healing (faster when resting), limping and death | A |
-| FR-509 | Per-species locomotion: hops with pauses, zigzag escape, flight and perching; terrain changes speed (river, hill) and ponds block | A |
+| FR-509 | Per-species movement intent: destination, gait (hops with pauses, zigzag escape, flight and perching), desired speed and gaze; the game moves the body and can report an unreachable destination. In the editor a simple mover does it, where terrain changes speed (river, hill) and ponds block | A |
 | FR-510 | Routine: outside its active hours the animal prefers to rest | A |
 
 ### 4.6 Export and integration
@@ -139,8 +139,8 @@ Each requirement has an ID so it can be cited in tasks and tests. Priority: **A*
 | --- | --- | --- |
 | FR-601 | Export each species as `.noetic.ron` (see section 6) | A |
 | FR-602 | Import `.ron` from a file or pasted text, with a clear message if the file is invalid | A |
-| FR-603 | `noetic` crate: Bevy plugin, `NoeticAgent` component, asset loader, hot reload and animation events for the game | A |
-| FR-604 | In-game world components (e.g. `WaterSource`, `Burrow`) so animals can find water and shelter | A |
+| FR-603 | `noetic` crate: Bevy plugin, `NoeticAgent` component, asset loader, hot reload, movement intents and animation events for the game | A |
+| FR-604 | In-game world components (e.g. `WaterSource`, `Burrow`, `Cover`, `Mud`), marker zones with a radius, so animals can find water, shelter and cover; unmarked ground is open | A |
 | FR-605 | Remote debugging: the editor connects to the running game (feature `debug`, default address 127.0.0.1:15702) and shows the brain live | B |
 | FR-606 | Rust extension: `NoeticAction`, `NoeticCondition`, `NoeticSensor`, `UtilityCurve`; nodes created in code appear in the editor | B |
 
@@ -277,7 +277,7 @@ The editor uses Bevy's own editor widgets (bevy_feathers) with the default dark 
 
 - Language and engine: everything is written in Rust; Bevy engine; the editor UI is built with Bevy UI + bevy_feathers (default theme).
 - The editor is 2D only; 3D is seen in the game through remote debugging.
-- In-game navigation uses existing navmesh crates.
+- In the game, movement and navigation belong to the game; Noetic publishes a movement intent.
 - File format: RON.
 
 **Out of scope for v1**
@@ -332,6 +332,7 @@ Phases are in order; dates are not set yet. Each phase ends with something that 
 | Reaction graph | What the animal does when scared: weighted branches (%) from one reaction to the next |
 | Blackboard / memory | What an individual remembers: water, scares, marks, the player |
 | Need | A drive that rises over time (hunger, thirst, fatigue…) and is lowered by an activity |
+| Movement intent | What Noetic wants the body to do: destination, gait, speed and gaze; the game moves the body |
 | Trait | A personality value 0–100 (Fear, Curiosity, Sociable, Appetite, Energy, Stubbornness, Aggressive) |
 | Quirk | A small individual habit (e.g. always flees to the left) |
 | Preset | A saved set of trait values |

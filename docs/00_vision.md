@@ -1,6 +1,6 @@
 # Noetic — Living Wildlife (Vision)
 
-Version 0.3 · Oct 16, 2026 · @heryk
+Version 0.4 · Oct 17, 2026 · @heryk
 
 ## Goal
 
@@ -175,7 +175,7 @@ Each animal perceives the world through three senses with their own range, and t
 
 ## Locomotion and animation
 
-The way an animal moves is half of the realism: Noetic decides what the animal does and how it moves, and the game plays the matching animation.
+The way an animal moves is half of the realism: Noetic decides what the animal does, where it goes and how it should move, and the game moves the body and plays the matching animation. Noetic only thinks; it never writes the `Transform`.
 
 | Species | Locomotion modes |
 | --- | --- |
@@ -186,11 +186,12 @@ The way an animal moves is half of the realism: Noetic decides what the animal d
 
 **Movement**
 
-- Steering (acceleration, turning, obstacle avoidance) instead of teleporting along the path: nothing turns instantly
+- Noetic publishes a movement intent (`MoveIntent`): destination, gait, desired speed and gaze direction. The game moves the body with its own pathfinding, physics or character controller, and Noetic reads the position back
 - Movement in "bursts": walk, stop, look, walk again, instead of continuous sliding
-- Terrain changes speed (river, hill, mud); injured animals limp
-- Pathfinding through the navigation crate the game already uses (navmesh); birds use perch points instead of navmesh in flight
-- Groups: separation, alignment and cohesion so the flock moves together without colliding
+- The zigzag escape is a destination that shifts from side to side, so the game only has to follow it; injured animals ask for a lower speed (limp)
+- When the game cannot reach the destination it says so (`MoveFailed`), and the animal gives up that step
+- Groups: members aim at a spot near the leader; keeping the flock from colliding is part of how the game moves it
+- Terrain speed (river, hill, mud), obstacles and flight are the game's; the editor's test world has a simple mover that does the same, so behavior can be tested without a game
 
 **Animation**
 
@@ -237,7 +238,7 @@ The editor and the game use the same runtime, so the animal you test in the edit
 | Crate | What it does |
 | --- | --- |
 | `noetic_core` | Needs, perception, memory, fear, reaction graph, activity choice (Utility) and execution (behavior tree). No Bevy |
-| `noetic` | The crate the game imports: plugin, components, systems, `.ron` loading, hot reload, steering and animation events; re-exports `noetic_core` |
+| `noetic` | The crate the game imports: plugin, components, systems, `.ron` loading, hot reload, movement intents and animation events; re-exports `noetic_core` |
 | `noetic_editor` | The editor app, does not ship with the game |
 
 **In the game**
@@ -250,7 +251,8 @@ commands.spawn((
 ```
 
 - The game maps animation events to the model's clips
-- World points (water, burrow, mud, perch) are marked with components such as `WaterSource` and `Burrow`, which the animals find on their own
+- World points and zones (water, burrow, mud, tall grass, perch) are marked with components such as `WaterSource`, `Burrow` and `Cover`, with a radius, which the animals find on their own; unmarked ground is open ground
+- The game moves each animal from its `MoveIntent` with its own navigation
 - Rust code is optional: you can create your own actions, senses and reactions when the editor is not enough
 
 **Memory (blackboard):** each animal keeps its own memory (`hunger`, `threat`, `last_water_seen`…) that the senses write and the decisions read.
@@ -279,7 +281,7 @@ Start with one very well made rabbit and only then multiply: everything the rabb
 | Language | Everything in Rust |
 | Editor UI | Native Bevy UI with bevy_feathers, default theme; English UI |
 | Editor view | 2D top-down; 3D only through remote debug in the game |
-| Navigation | Integrate existing crates (navmesh) |
+| Movement | Noetic decides and publishes a movement intent; the game moves the body with its own navigation |
 | Format | One `.ron` per species |
 | License | MIT/Apache-2.0, editor and runtime open source |
 
