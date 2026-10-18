@@ -1,7 +1,7 @@
 //! How an animal does an activity, one step at a time: each step lasts a drawn time and
 //! may lower a need while it runs (API-COR-011).
 use crate::agent::{Agent, AgentState};
-use crate::model::{Need, Step, StepKind};
+use crate::model::{Activity, Need, Species, Step, StepKind};
 
 // ==== Config =================================================================
 
@@ -30,6 +30,25 @@ pub enum StepStatus {
 
 // ==== Systems ================================================================
 
+/// Puts the animal in step `index` of activity `act` with its time drawn from the
+/// step's `secs` (the start of API-COR-011); past the last step the activity is over
+/// and the animal goes back to choosing.
+pub fn enter_step(agent: &mut Agent, act: &str, activity: &Activity, index: usize) {
+    match activity.steps.get(index) {
+        Some(step) => {
+            let t_left = agent.rng.range(step.secs.0, step.secs.1);
+            agent.state = AgentState::InActivity {
+                act: act.to_string(),
+                step: index,
+                t_left,
+            };
+        }
+        None => {
+            agent.state = AgentState::Choosing;
+        }
+    }
+}
+
 /// API-COR-011 Runs one step of the activity the animal is in for `dt` seconds: lowers
 /// the step's need, counts its time down and says whether it is over. A `GoTo` fails
 /// until the world can tell where things are, and so does a step run outside an
@@ -49,6 +68,30 @@ pub fn run_step(agent: &mut Agent, step: &Step, dt: f32) -> StepStatus {
         StepStatus::Running
     } else {
         StepStatus::Done
+    }
+}
+
+/// What an animal in an activity does for `dt` seconds (PRC-11 of API-COR-021): runs
+/// its current step, moves to the next one when it is done, and goes back to choosing
+/// when the step fails or the activity is gone from the species.
+pub fn do_activity(agent: &mut Agent, species: &Species, dt: f32) {
+    let AgentState::InActivity { act, step, .. } = &agent.state else {
+        return;
+    };
+    // own copies: run_step needs the whole agent, so nothing may still point into it
+    let (act, index) = (act.clone(), *step);
+    let Some(activity) = species.activities.get(&act) else {
+        agent.state = AgentState::Choosing;
+        return;
+    };
+    let Some(step) = activity.steps.get(index) else {
+        agent.state = AgentState::Choosing;
+        return;
+    };
+    match run_step(agent, step, dt) {
+        StepStatus::Running => {}
+        StepStatus::Done => enter_step(agent, &act, activity, index + 1),
+        StepStatus::Failed => agent.state = AgentState::Choosing,
     }
 }
 
@@ -81,12 +124,16 @@ pub fn relief(kind: StepKind) -> Option<(Need, f32)> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::model::GoToTarget;
+    use crate::model::{Curve, GoToTarget};
 
     const TOLERANCE: f32 = 1e-4;
     /// How long the test step lasts.
     const STEP_S: f32 = 3.0;
     const HUNGER: f32 = 50.0;
+    /// How long the first step of the test activity lasts.
+    const EAT_SECS: (f32, f32) = (1.0, 2.0);
+    /// A time longer than any step of the test activity, so each run finishes one.
+    const LONG_S: f32 = 10.0;
 
     /// A hungry animal in the first step of an activity, with `STEP_S` to go.
     fn eating() -> Agent {
@@ -100,6 +147,7 @@ mod tests {
         agent
     }
 
+    /// A step of `kind` that lasts exactly `STEP_S`, with no animation.
     fn step(kind: StepKind) -> Step {
         Step {
             do_: kind,
@@ -157,5 +205,73 @@ mod tests {
             StepStatus::Failed
         );
         assert_eq!(choosing, before);
+    }
+
+    // ---- enter_step and do_activity -----------------------------------------
+
+    /// A `graze` activity whose first step is `first`, for `EAT_SECS`, and whose second
+    /// is watching, and a species that offers it.
+    fn grazing(first: StepKind) -> (Species, Activity) {
+        let activity = Activity {
+            need: Need::Hunger,
+            curve: Curve::Linear,
+            weight: 1.0,
+            steps: vec![
+                Step {
+                    do_: first,
+                    secs: EAT_SECS,
+                    anim: None,
+                },
+                step(StepKind::Watch),
+            ],
+        };
+        let mut species = Species::diurnal(0.0);
+        species
+            .activities
+            .insert("graze".to_string(), activity.clone());
+        (species, activity)
+    }
+
+    /// UT-062 Entering a step draws its time within the step's seconds; entering past
+    /// the last step ends the activity.
+    #[test]
+    fn entering_a_step_draws_its_time_and_past_the_end_ends_the_activity() {
+        let (_, activity) = grazing(StepKind::Eat);
+        let mut agent = Agent::calm();
+        enter_step(&mut agent, "graze", &activity, 0);
+        let AgentState::InActivity { act, step, t_left } = &agent.state else {
+            panic!("the animal is in the activity");
+        };
+        assert_eq!((act.as_str(), *step), ("graze", 0));
+        assert!((EAT_SECS.0..EAT_SECS.1).contains(t_left), "t_left {t_left}");
+
+        enter_step(&mut agent, "graze", &activity, activity.steps.len());
+        assert_eq!(agent.state, AgentState::Choosing);
+    }
+
+    /// UT-063 An activity runs its steps in order and then goes back to choosing.
+    #[test]
+    fn an_activity_runs_its_steps_in_order_then_ends() {
+        let (species, activity) = grazing(StepKind::Eat);
+        let mut agent = Agent::calm();
+        enter_step(&mut agent, "graze", &activity, 0);
+        do_activity(&mut agent, &species, LONG_S);
+        let on_step = |agent: &Agent| match &agent.state {
+            AgentState::InActivity { step, .. } => Some(*step),
+            AgentState::Choosing => None,
+        };
+        assert_eq!(on_step(&agent), Some(1));
+        do_activity(&mut agent, &species, LONG_S);
+        assert_eq!(agent.state, AgentState::Choosing);
+    }
+
+    /// UT-064 A step that fails drops the activity, and the animal chooses again.
+    #[test]
+    fn a_failed_step_drops_the_activity() {
+        let (species, activity) = grazing(StepKind::GoTo(GoToTarget::Food));
+        let mut agent = Agent::calm();
+        enter_step(&mut agent, "graze", &activity, 0);
+        do_activity(&mut agent, &species, 1.0);
+        assert_eq!(agent.state, AgentState::Choosing);
     }
 }
