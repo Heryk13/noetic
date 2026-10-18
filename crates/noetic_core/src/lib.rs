@@ -3,4 +3,5 @@
 pub mod agent;
 pub mod model;
 pub mod rng;
+pub mod utility;
 pub mod world;

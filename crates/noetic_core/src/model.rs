@@ -56,11 +56,12 @@ pub enum Trait {
 
 // ==== Species ================================================================
 
-/// TYP-01 A species as its `.noetic.ron` file describes it; only the needs so far, the
-/// rest of the schema joins as the code that reads it does.
+/// TYP-01 A species as its `.noetic.ron` file describes it; only the needs and the
+/// routine so far, the rest of the schema joins as the code that reads it does.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Species {
     pub needs: NeedRates,
+    pub routine: Routine,
 }
 
 /// How fast hunger, thirst and fatigue rise per game hour (0–60 each), and the fear

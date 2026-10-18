@@ -4,6 +4,7 @@ use std::ops::Range;
 
 use crate::agent::Agent;
 use crate::model::{Need, Species, Trait};
+use crate::utility::is_active_hour;
 use crate::world::WorldView;
 
 // ==== Config =================================================================
@@ -30,6 +31,12 @@ const EVENING_SONG_HOURS: Range<f32> = 16.0..19.0;
 const SING_RISE_PER_H: f32 = 90.0;
 /// How fast it drops per game hour outside them.
 const SING_DROP_PER_H: f32 = 50.0;
+/// How much faster fatigue rises outside the species' active hours (ALG-02).
+const OFF_HOURS_FATIGUE_FACTOR: f32 = 1.6;
+/// Fatigue factor of an animal with energy 0; energy 45 brings it to 1.0.
+const FATIGUE_FACTOR_MAX: f32 = 1.3;
+/// Energy points that take 1.0 off the fatigue factor.
+const ENERGY_PER_FATIGUE_FACTOR: f32 = 150.0;
 
 // ==== Needs ==================================================================
 
@@ -38,9 +45,10 @@ pub type Needs = EnumMap<Need, f32>;
 
 // ==== Systems ================================================================
 
-/// API-COR-002 Moves the needs with the game hours that passed: hunger and thirst rise
-/// at the species rate (hunger also with appetite), heat and the urge to sing follow
-/// the hour; every need stays within 0–100.
+/// API-COR-002 Moves the needs with the game hours that passed: hunger, thirst and
+/// fatigue rise at the species rate (hunger with appetite, fatigue with energy and
+/// faster outside the active hours), heat and the urge to sing follow the hour; every
+/// need stays within 0–100.
 pub fn update_needs(agent: &mut Agent, species: &Species, view: &dyn WorldView, delta_hours: f32) {
     agent.needs[Need::Thirst] += species.needs.thirst_per_h * delta_hours;
     let appetite = f32::from(agent.traits[Trait::Appetite]);
@@ -48,6 +56,16 @@ pub fn update_needs(agent: &mut Agent, species: &Species, view: &dyn WorldView, 
         * (HUNGER_FACTOR_MIN + appetite / APPETITE_PER_HUNGER_FACTOR)
         * delta_hours;
     let hour = view.hour();
+    let energy = f32::from(agent.traits[Trait::Energy]);
+    let hour_factor = if is_active_hour(species.routine, hour) {
+        1.0
+    } else {
+        OFF_HOURS_FATIGUE_FACTOR
+    };
+    agent.needs[Need::Fatigue] += species.needs.fatigue_per_h
+        * hour_factor
+        * (FATIGUE_FACTOR_MAX - energy / ENERGY_PER_FATIGUE_FACTOR)
+        * delta_hours;
     agent.needs[Need::Heat] += (if HOT_HOURS.contains(&hour) {
         HEAT_RISE_PER_H
     } else {
@@ -70,7 +88,7 @@ pub fn update_needs(agent: &mut Agent, species: &Species, view: &dyn WorldView, 
 mod tests {
     use super::*;
     use crate::agent::TraitMap;
-    use crate::model::NeedRates;
+    use crate::model::{NeedRates, Routine};
 
     const RATE_PER_H: f32 = 10.0;
     const TOLERANCE: f32 = 1e-4;
@@ -119,6 +137,7 @@ mod tests {
                 fatigue_per_h: RATE_PER_H,
                 fear_threshold: NEED_MAX / 2.0,
             },
+            routine: Routine::Diurnal,
         }
     }
 
@@ -196,5 +215,30 @@ mod tests {
         update_needs(&mut agent, &species(), &noon(), 1.0);
         let expected = NEED_MAX - SING_DROP_PER_H;
         assert!((agent.needs[Need::Sing] - expected).abs() <= TOLERANCE);
+    }
+
+    /// The energy whose fatigue factor is exactly 1.0.
+    fn average_energy() -> u8 {
+        ((FATIGUE_FACTOR_MAX - 1.0) * ENERGY_PER_FATIGUE_FACTOR).round() as u8
+    }
+
+    /// UT-047 During its active hours an animal of average energy tires at the species
+    /// rate.
+    #[test]
+    fn average_energy_tires_at_the_species_rate() {
+        let mut agent = calm_agent();
+        agent.traits[Trait::Energy] = average_energy();
+        update_needs(&mut agent, &species(), &noon(), 1.0);
+        assert!((agent.needs[Need::Fatigue] - RATE_PER_H).abs() <= TOLERANCE);
+    }
+
+    /// UT-048 Outside its active hours the same animal tires faster.
+    #[test]
+    fn fatigue_rises_faster_outside_the_active_hours() {
+        let mut agent = calm_agent();
+        agent.traits[Trait::Energy] = average_energy();
+        update_needs(&mut agent, &species(), &at(NIGHT_H), 1.0);
+        let expected = RATE_PER_H * OFF_HOURS_FATIGUE_FACTOR;
+        assert!((agent.needs[Need::Fatigue] - expected).abs() <= TOLERANCE);
     }
 }
