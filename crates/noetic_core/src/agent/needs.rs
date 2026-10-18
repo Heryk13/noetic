@@ -100,6 +100,8 @@ mod tests {
     const NOON_H: f32 = 12.0;
     /// An hour outside every range of the needs that follow the hour.
     const NIGHT_H: f32 = 2.0;
+    /// A game hour of one real minute; these tests pass game hours directly.
+    const SECS_PER_GAME_HOUR: f32 = 60.0;
 
     /// A world that only knows the hour.
     struct FakeWorld {
@@ -109,6 +111,10 @@ mod tests {
     impl WorldView for FakeWorld {
         fn hour(&self) -> f32 {
             self.hour
+        }
+
+        fn secs_per_game_hour(&self) -> f32 {
+            SECS_PER_GAME_HOUR
         }
     }
 
