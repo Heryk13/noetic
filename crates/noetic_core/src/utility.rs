@@ -331,6 +331,7 @@ mod tests {
                 need,
                 curve: Curve::Linear,
                 weight: 1.0,
+                steps: Vec::new(),
             };
             species.activities.insert(name.to_string(), activity);
         }

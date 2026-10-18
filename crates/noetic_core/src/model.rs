@@ -56,6 +56,40 @@ pub enum Trait {
     Aggro,
 }
 
+/// TYP-10 Where a `GoTo` step takes the animal; the world says which spot of that kind
+/// is the one to go to.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum GoToTarget {
+    Food,
+    Water,
+    Shelter,
+    MarkSpot,
+    Mud,
+    Rival,
+    Perch,
+}
+
+/// TYP-10 What one step of an activity does; `Custom` steps from the extension traits
+/// join with them (M9).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum StepKind {
+    Wander,
+    GoTo(GoToTarget),
+    Sniff,
+    Watch,
+    Eat,
+    Drink,
+    Rest,
+    Groom,
+    Dig,
+    Mark,
+    Wallow,
+    Rub,
+    Fight,
+    Sing,
+    Perch,
+}
+
 // ==== Species ================================================================
 
 /// TYP-01 A species as its `.noetic.ron` file describes it; only the needs, routine,
@@ -80,13 +114,24 @@ pub struct NeedRates {
     pub fear_threshold: f32,
 }
 
-/// TYP-08 Something a species knows how to do, scored by the need it lowers; its name
-/// is its key in the species' activity map. Its steps join with TYP-09.
+/// TYP-08 Something a species knows how to do, scored by the need it lowers and done
+/// as its steps in order; its name is its key in the species' activity map.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Activity {
     pub need: Need,
     pub curve: Curve,
     pub weight: f32,
+    pub steps: Vec<Step>,
+}
+
+/// TYP-09 One step of an activity: what it does, how long it lasts (drawn between
+/// the two seconds of `secs`) and its animation, if any. The field is `do_` because
+/// `do` is a reserved word; the file calls it `do`.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Step {
+    pub do_: StepKind,
+    pub secs: (f32, f32),
+    pub anim: Option<String>,
 }
 
 /// TYP-07 Which activities the Utility choice weighs, and how much noise it adds to
