@@ -18,6 +18,8 @@ categories = ["game-development", "simulation"]
 # seeded PRNG behind noetic_core::rng (NFR-01, Basic Design T-05)
 rand = { version = "0.10", default-features = false, features = ["alloc"] }
 rand_pcg = "0.10"
+# one value per enum variant, read by the variant (Needs)
+enum-map = "3.1"
 
 [workspace.lints.rust]
 # Internal Design CS-02

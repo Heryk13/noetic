@@ -173,8 +173,15 @@ The character tells the kind of boundary:
 
 ## Dependencies
 
-- New crates are fine when they save real work, but check first if Bevy or the standard
-  library already does it. Every crate has to move to the next Bevy release before Noetic can.
+- Check first if Bevy or the standard library already does it.
+- Then prefer a well-known crate to code written by hand: it is code someone else tests and
+  maintains, and what is left here reads as names instead of arithmetic. A crate qualifies when
+  it is widely used (millions of downloads, depended on by other well-known crates), maintained
+  (a release in the last year) and permissively licensed (MIT or Apache-2.0). A small or
+  little-known crate does not: write the code instead, since a crate nobody watches is a risk
+  nobody sees.
+- Every crate has to move to the next Bevy release before Noetic can, so a crate that depends
+  on Bevy costs more than one that does not.
 - The allowed crates per workspace member are listed in Internal Design › 2 Workspace.
   `cargo-deny` checks the layering and every dependency license; review a new license before
   allowing it.

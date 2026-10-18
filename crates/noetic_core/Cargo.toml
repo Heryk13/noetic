@@ -10,6 +10,7 @@ keywords.workspace = true
 categories.workspace = true
 
 [dependencies]
+enum-map.workspace = true
 rand.workspace = true
 rand_pcg.workspace = true
 
