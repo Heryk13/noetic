@@ -26,8 +26,9 @@ pub enum AgentState {
     },
 }
 
-/// TYP-11 One animal in the simulation; only the fields the needs tick and the
-/// Utility choice read so far, the rest of TYP-11 joins as the code that uses it does.
+/// TYP-11 One animal in the simulation; only the fields the needs tick, the Utility
+/// choice and the steps read so far, the rest of TYP-11 joins as the code that uses it
+/// does.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Agent {
     pub needs: Needs,

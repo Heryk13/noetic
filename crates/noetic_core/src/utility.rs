@@ -26,7 +26,7 @@ const CALM_DRIVE_PER_CALM: f32 = 0.55;
 /// Pull of curiosity in an animal born with none.
 const CURIOSITY_DRIVE_BASE: f32 = 20.0;
 /// Pull added per point of the curiosity trait.
-const CURIOSITY_DRIVE_PER_TRAIT: f32 = 0.6;
+const CURIOSITY_DRIVE_PER_CURIOSITY: f32 = 0.6;
 /// Pull of boredom in an animal born with no energy.
 const BOREDOM_DRIVE_BASE: f32 = 30.0;
 /// Pull added per point of the energy trait.
@@ -120,7 +120,7 @@ pub fn drive(agent: &Agent, species: &Species, need: Need, hour: f32) -> f32 {
         Need::Calm => (NEED_MAX - agent.fear) * CALM_DRIVE_PER_CALM,
         Need::Curiosity => {
             CURIOSITY_DRIVE_BASE
-                + f32::from(agent.traits[Trait::Curiosity]) * CURIOSITY_DRIVE_PER_TRAIT
+                + f32::from(agent.traits[Trait::Curiosity]) * CURIOSITY_DRIVE_PER_CURIOSITY
         }
         Need::Boredom => {
             BOREDOM_DRIVE_BASE + f32::from(agent.traits[Trait::Energy]) * BOREDOM_DRIVE_PER_ENERGY
@@ -289,7 +289,7 @@ mod tests {
         let mut agent = Agent::calm();
         agent.traits[Trait::Curiosity] = 50;
         agent.traits[Trait::Energy] = 50;
-        let curiosity = CURIOSITY_DRIVE_BASE + 50.0 * CURIOSITY_DRIVE_PER_TRAIT;
+        let curiosity = CURIOSITY_DRIVE_BASE + 50.0 * CURIOSITY_DRIVE_PER_CURIOSITY;
         let boredom = BOREDOM_DRIVE_BASE + 50.0 * BOREDOM_DRIVE_PER_ENERGY;
         assert!(close(
             drive(&agent, &Species::diurnal(0.0), Need::Curiosity, NOON_H),

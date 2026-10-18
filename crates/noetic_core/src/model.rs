@@ -114,6 +114,21 @@ pub struct NeedRates {
     pub fear_threshold: f32,
 }
 
+/// TYP-02 How a species decides: what to do when all is calm (`choose`); how it reacts
+/// to danger joins with the reaction graph.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Brain {
+    pub choose: ChooseSpec,
+}
+
+/// TYP-07 Which activities the Utility choice weighs, and how much noise it adds to
+/// their scores so that animals of one species do not move in step (ALG-10).
+#[derive(Debug, Clone, PartialEq)]
+pub struct ChooseSpec {
+    pub noise: f32,
+    pub options: Vec<String>,
+}
+
 /// TYP-08 Something a species knows how to do, scored by the need it lowers and done
 /// as its steps in order; its name is its key in the species' activity map.
 #[derive(Debug, Clone, PartialEq)]
@@ -132,21 +147,6 @@ pub struct Step {
     pub do_: StepKind,
     pub secs: (f32, f32),
     pub anim: Option<String>,
-}
-
-/// TYP-07 Which activities the Utility choice weighs, and how much noise it adds to
-/// their scores so that animals of one species do not move in step (ALG-10).
-#[derive(Debug, Clone, PartialEq)]
-pub struct ChooseSpec {
-    pub noise: f32,
-    pub options: Vec<String>,
-}
-
-/// TYP-02 How a species decides: what to do when all is calm (`choose`); how it reacts
-/// to danger joins with the reaction graph.
-#[derive(Debug, Clone, PartialEq)]
-pub struct Brain {
-    pub choose: ChooseSpec,
 }
 
 // ==== Tests ==================================================================

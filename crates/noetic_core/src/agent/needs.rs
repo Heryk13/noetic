@@ -1,6 +1,7 @@
 //! The needs of one animal and how they rise with time, the hour and the place (ALG-02).
-use enum_map::EnumMap;
 use std::ops::Range;
+
+use enum_map::EnumMap;
 
 use crate::agent::Agent;
 use crate::model::{Need, Species, Trait};

@@ -3,5 +3,6 @@
 pub mod agent;
 pub mod model;
 pub mod rng;
+pub mod steps;
 pub mod utility;
 pub mod world;
