@@ -26,11 +26,12 @@ pub enum AgentState {
     },
 }
 
-/// TYP-11 One animal in the simulation; only the fields the needs tick, the Utility
-/// choice and the steps read so far, the rest of TYP-11 joins as the code that uses it
-/// does.
+/// TYP-11 One animal in the simulation, of the species named by `species`; only the
+/// fields the needs tick, the Utility choice and the steps read so far, the rest of
+/// TYP-11 joins as the code that uses it does.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Agent {
+    pub species: String,
     pub needs: Needs,
     pub traits: TraitMap,
     pub limping: bool,
@@ -43,10 +44,11 @@ pub struct Agent {
 
 #[cfg(test)]
 impl Agent {
-    /// A calm animal for the tests of every file: every need and trait at 0, no fear,
-    /// not limping, seed 1 and still choosing what to do.
+    /// A calm animal of a `test` species for the tests of every file: every need and
+    /// trait at 0, no fear, not limping, seed 1 and still choosing what to do.
     pub(crate) fn calm() -> Self {
         Agent {
+            species: "test".to_string(),
             needs: Needs::default(),
             traits: TraitMap::default(),
             limping: false,

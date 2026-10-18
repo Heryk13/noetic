@@ -5,7 +5,7 @@ use crate::agent::{Agent, AgentState};
 use crate::model::Species;
 use crate::steps::{do_activity, enter_step};
 use crate::utility::choose_activity;
-use crate::world::WorldView;
+use crate::world::{WorldView, game_hours};
 
 // ==== Systems ================================================================
 
@@ -14,9 +14,7 @@ use crate::world::WorldView;
 /// step. Heal, perceive, memory, fear and the threat branch join in PRC order with
 /// their code.
 pub fn think_agent(agent: &mut Agent, species: &Species, view: &dyn WorldView, dt: f32) {
-    // a game hour of no length means game time stands still, not a division by zero
-    let secs = view.secs_per_game_hour();
-    let delta_hours = if secs > 0.0 { dt / secs } else { 0.0 };
+    let delta_hours = game_hours(view, dt);
     update_needs(agent, species, view, delta_hours);
     if agent.state == AgentState::Choosing
         && let Some((name, _scores)) = choose_activity(agent, species, view.hour())
