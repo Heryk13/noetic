@@ -86,9 +86,12 @@ pub fn update_needs(agent: &mut Agent, species: &Species, view: &dyn WorldView, 
 
 #[cfg(test)]
 mod tests {
+    use std::collections::BTreeMap;
+
     use super::*;
     use crate::agent::TraitMap;
-    use crate::model::{NeedRates, Routine};
+    use crate::model::{Brain, ChooseSpec, NeedRates, Routine};
+    use crate::rng::Rng;
 
     const RATE_PER_H: f32 = 10.0;
     const TOLERANCE: f32 = 1e-4;
@@ -127,6 +130,7 @@ mod tests {
             traits: TraitMap::default(),
             limping: false,
             fear: 0.0,
+            rng: Rng::seed(1),
         }
     }
 
@@ -139,6 +143,13 @@ mod tests {
                 fear_threshold: NEED_MAX / 2.0,
             },
             routine: Routine::Diurnal,
+            brain: Brain {
+                choose: ChooseSpec {
+                    noise: 0.0,
+                    options: Vec::new(),
+                },
+            },
+            activities: BTreeMap::new(),
         }
     }
 

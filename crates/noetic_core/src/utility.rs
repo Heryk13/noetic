@@ -128,14 +128,56 @@ pub fn drive(agent: &Agent, species: &Species, need: Need, hour: f32) -> f32 {
     }
 }
 
+/// API-COR-009 Picks what the animal does next: scores every activity the species
+/// offers, by how hard its need pulls, its curve, its weight, the daily rhythm and a
+/// little noise from the animal's own `Rng`, and returns the highest with every score;
+/// a tie goes to the name first in alphabetical order, and `None` means there is
+/// nothing to choose (ALG-10).
+pub fn choose_activity(
+    agent: &mut Agent,
+    species: &Species,
+    hour: f32,
+) -> Option<(String, Vec<(String, f32)>)> {
+    let mut scores = Vec::new();
+    for name in &species.brain.choose.options {
+        let Some(activity) = species.activities.get(name) else {
+            continue;
+        };
+        let x = drive(agent, species, activity.need, hour) / NEED_MAX;
+        let mut score = curve_eval(activity.curve, x)
+            * activity.weight
+            * routine_factor(species.routine, hour, activity.need == Need::Fatigue);
+        // trait_factor and quirk_bonus of ALG-10 join with personalities and quirks (M8);
+        // until then they are 1.0 and leave the score as it is
+        score *= 1.0 + species.brain.choose.noise * (2.0 * agent.rng.unit() - 1.0);
+        scores.push((name.clone(), score));
+    }
+    // highest score wins; a tie goes to the lower name, so the pick is deterministic
+    let mut best: Option<&(String, f32)> = None;
+    for entry in &scores {
+        let is_better = match best {
+            None => true,
+            Some(b) => entry.1 > b.1 || (entry.1 == b.1 && entry.0 < b.0),
+        };
+        if is_better {
+            best = Some(entry);
+        }
+    }
+    let chosen = best?.0.clone();
+    Some((chosen, scores))
+}
+
 // ==== Tests ==================================================================
 
 #[cfg(test)]
 mod tests {
+    use std::collections::BTreeMap;
+
     use super::*;
     use crate::agent::TraitMap;
     use crate::agent::needs::Needs;
-    use crate::model::NeedRates;
+    use crate::model::{Activity, Brain, ChooseSpec, NeedRates};
+    use crate::rng::Rng;
 
     const TOLERANCE: f32 = 1e-4;
     const NOON_H: f32 = 12.0;
@@ -148,6 +190,7 @@ mod tests {
             traits: TraitMap::default(),
             limping: false,
             fear: 0.0,
+            rng: Rng::seed(1),
         }
     }
 
@@ -160,6 +203,13 @@ mod tests {
                 fear_threshold: NEED_MAX / 2.0,
             },
             routine: Routine::Diurnal,
+            brain: Brain {
+                choose: ChooseSpec {
+                    noise: 0.0,
+                    options: Vec::new(),
+                },
+            },
+            activities: BTreeMap::new(),
         }
     }
 
@@ -284,5 +334,79 @@ mod tests {
         agent.needs[Need::Fight] = NEED_MAX;
         assert!(close(drive(&agent, &diurnal(), Need::Mark, NOON_H), 0.0));
         assert!(close(drive(&agent, &diurnal(), Need::Fight, NOON_H), 0.0));
+    }
+
+    // ---- choose_activity ----------------------------------------------------
+
+    /// A diurnal species offering `options`, with one linear activity per `(name, need)`.
+    fn offering(options: &[&str], activities: &[(&str, Need)], noise: f32) -> Species {
+        let mut species = diurnal();
+        species.brain.choose = ChooseSpec {
+            noise,
+            options: options.iter().map(ToString::to_string).collect(),
+        };
+        for &(name, need) in activities {
+            let activity = Activity {
+                need,
+                curve: Curve::Linear,
+                weight: 1.0,
+            };
+            species.activities.insert(name.to_string(), activity);
+        }
+        species
+    }
+
+    /// UT-055 The activity whose need pulls hardest wins, and every score comes back.
+    #[test]
+    fn the_hungriest_need_wins() {
+        let mut agent = calm_agent();
+        agent.needs[Need::Hunger] = 80.0;
+        agent.needs[Need::Thirst] = 20.0;
+        let eat_or_drink = [("eat", Need::Hunger), ("drink", Need::Thirst)];
+        let species = offering(&["eat", "drink"], &eat_or_drink, 0.0);
+        let Some((chosen, scores)) = choose_activity(&mut agent, &species, NOON_H) else {
+            panic!("there was something to choose");
+        };
+        assert_eq!(chosen, "eat");
+        assert_eq!(scores.len(), 2);
+    }
+
+    /// UT-056 Two equal scores go to the name first in alphabetical order, whatever
+    /// the order of the options.
+    #[test]
+    fn a_tie_goes_to_the_first_name() {
+        let mut agent = calm_agent();
+        agent.needs[Need::Hunger] = 50.0;
+        let both_graze = [("graze_b", Need::Hunger), ("graze_a", Need::Hunger)];
+        let species = offering(&["graze_b", "graze_a"], &both_graze, 0.0);
+        let chosen = choose_activity(&mut agent, &species, NOON_H).map(|(name, _)| name);
+        assert_eq!(chosen.as_deref(), Some("graze_a"));
+    }
+
+    /// UT-057 With no options, or only options the species does not have, nothing is
+    /// chosen instead of a panic.
+    #[test]
+    fn nothing_to_choose_gives_none() {
+        let mut agent = calm_agent();
+        assert_eq!(
+            choose_activity(&mut agent, &offering(&[], &[], 0.0), NOON_H),
+            None
+        );
+        let unknown = offering(&["fly"], &[], 0.0);
+        assert_eq!(choose_activity(&mut agent, &unknown, NOON_H), None);
+    }
+
+    /// UT-058 The same seed gives the same scores, noise included.
+    #[test]
+    fn the_same_seed_scores_the_same() {
+        let eat_or_drink = [("eat", Need::Hunger), ("drink", Need::Thirst)];
+        let species = offering(&["eat", "drink"], &eat_or_drink, 0.3);
+        let mut first = calm_agent();
+        first.needs[Need::Hunger] = 50.0;
+        let mut second = first.clone();
+        assert_eq!(
+            choose_activity(&mut first, &species, NOON_H),
+            choose_activity(&mut second, &species, NOON_H)
+        );
     }
 }

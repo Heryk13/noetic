@@ -3,6 +3,7 @@
 use enum_map::EnumMap;
 
 use crate::model::Trait;
+use crate::rng::Rng;
 use needs::Needs;
 
 pub mod needs;
@@ -20,4 +21,5 @@ pub struct Agent {
     pub traits: TraitMap,
     pub limping: bool,
     pub fear: f32,
+    pub rng: Rng,
 }

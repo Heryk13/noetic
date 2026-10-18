@@ -1,5 +1,7 @@
 //! The species as a `.noetic.ron` file describes it: needs, brain, activities and the
 //! rest of what an animal of that species is.
+use std::collections::BTreeMap;
+
 use enum_map::Enum;
 
 // ==== Enums ==================================================================
@@ -56,12 +58,15 @@ pub enum Trait {
 
 // ==== Species ================================================================
 
-/// TYP-01 A species as its `.noetic.ron` file describes it; only the needs and the
-/// routine so far, the rest of the schema joins as the code that reads it does.
+/// TYP-01 A species as its `.noetic.ron` file describes it; only the needs, routine,
+/// brain and activities so far, the rest of the schema joins as the code that reads it
+/// does.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Species {
     pub needs: NeedRates,
     pub routine: Routine,
+    pub brain: Brain,
+    pub activities: BTreeMap<String, Activity>,
 }
 
 /// How fast hunger, thirst and fatigue rise per game hour (0–60 each), and the fear
@@ -90,4 +95,11 @@ pub struct Activity {
 pub struct ChooseSpec {
     pub noise: f32,
     pub options: Vec<String>,
+}
+
+/// TYP-02 How a species decides: what to do when all is calm (`choose`); how it reacts
+/// to danger joins with the reaction graph.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Brain {
+    pub choose: ChooseSpec,
 }

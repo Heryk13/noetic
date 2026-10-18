@@ -10,7 +10,7 @@ use rand_pcg::Pcg32;
 
 /// API-COR-017 A seeded PRNG: the same seed always gives the same sequence, so a
 /// cloned agent keeps drawing the same numbers as the original.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Rng(Pcg32);
 
 impl Rng {
