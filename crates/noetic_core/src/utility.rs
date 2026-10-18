@@ -1,6 +1,11 @@
 //! What an animal feels like doing: the scores of the Utility choice and the daily
 //! rhythm that weighs them (ALG-10).
-use crate::model::Routine;
+use crate::model::{Curve, Routine};
+
+// ==== Config =================================================================
+
+/// Need, 0–1, at which a Step curve jumps from no urge to full urge (ALG-10).
+const STEP_CURVE_THRESHOLD: f32 = 0.6;
 
 // ==== Systems ================================================================
 
@@ -33,6 +38,24 @@ pub fn is_active_hour(routine: Routine, hour: f32) -> bool {
     false
 }
 
+/// API-COR-010 The urge a need gives through a curve, both 0–1: `Linear` x,
+/// `Accelerating` x², `FastStart` √x, `Step` 0 below the threshold and 1 from it
+/// (ALG-10).
+pub fn curve_eval(curve: Curve, x: f32) -> f32 {
+    match curve {
+        Curve::Linear => x,
+        Curve::Accelerating => x * x,
+        Curve::FastStart => x.sqrt(),
+        Curve::Step => {
+            if x < STEP_CURVE_THRESHOLD {
+                0.0
+            } else {
+                1.0
+            }
+        }
+    }
+}
+
 // ==== Tests ==================================================================
 
 #[cfg(test)]
@@ -47,5 +70,22 @@ mod tests {
         assert!(is_active_hour(Routine::Nocturnal, 23.0));
         assert!(is_active_hour(Routine::Nocturnal, 3.0));
         assert!(!is_active_hour(Routine::Nocturnal, 12.0));
+    }
+
+    // ---- curve_eval ---------------------------------------------------------
+
+    /// UT-021 Every curve gives no urge at an empty need and full urge at a full one.
+    #[test]
+    fn every_curve_runs_from_zero_to_one() {
+        for curve in [
+            Curve::Linear,
+            Curve::Accelerating,
+            Curve::FastStart,
+            Curve::Step,
+        ] {
+            // 0 and 1 are exact in every formula, so no tolerance is needed
+            assert_eq!(curve_eval(curve, 0.0), 0.0, "{curve:?} at 0");
+            assert_eq!(curve_eval(curve, 1.0), 1.0, "{curve:?} at 1");
+        }
     }
 }
