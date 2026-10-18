@@ -95,6 +95,21 @@ pub fn do_activity(agent: &mut Agent, species: &Species, dt: f32) {
     }
 }
 
+/// Whether the animal is resting now: in an activity whose current step is `Rest`
+/// (ALG-02 keeps fatigue from rising then).
+pub fn is_resting(agent: &Agent, species: &Species) -> bool {
+    let AgentState::InActivity { act, step, .. } = &agent.state else {
+        return false;
+    };
+    let Some(activity) = species.activities.get(act) else {
+        return false;
+    };
+    let Some(current) = activity.steps.get(*step) else {
+        return false;
+    };
+    current.do_ == StepKind::Rest
+}
+
 // ==== Helpers ================================================================
 
 /// The need a step lowers while it runs and by how much per second; `None` for a step
@@ -117,21 +132,6 @@ pub fn relief(kind: StepKind) -> Option<(Need, f32)> {
         | StepKind::Fight
         | StepKind::Perch => None,
     }
-}
-
-/// Whether the animal is resting now: in an activity whose current step is `Rest`
-/// (ALG-02 keeps fatigue from rising then).
-pub fn is_resting(agent: &Agent, species: &Species) -> bool {
-    let AgentState::InActivity { act, step, .. } = &agent.state else {
-        return false;
-    };
-    let Some(activity) = species.activities.get(act) else {
-        return false;
-    };
-    let Some(current) = activity.steps.get(*step) else {
-        return false;
-    };
-    current.do_ == StepKind::Rest
 }
 
 // ==== Tests ==================================================================
