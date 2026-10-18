@@ -5,6 +5,7 @@ use enum_map::EnumMap;
 
 use crate::agent::Agent;
 use crate::model::{Need, Species, Trait};
+use crate::steps::is_resting;
 use crate::utility::is_active_hour;
 use crate::world::WorldView;
 
@@ -47,9 +48,9 @@ pub type Needs = EnumMap<Need, f32>;
 // ==== Systems ================================================================
 
 /// API-COR-002 Moves the needs with the game hours that passed: hunger, thirst and
-/// fatigue rise at the species rate (hunger with appetite, fatigue with energy and
-/// faster outside the active hours), heat and the urge to sing follow the hour; every
-/// need stays within 0–100.
+/// fatigue rise at the species rate (hunger with appetite, fatigue with energy, faster
+/// outside the active hours and not at all while resting), heat and the urge to sing
+/// follow the hour; every need stays within 0–100.
 pub fn update_needs(agent: &mut Agent, species: &Species, view: &dyn WorldView, delta_hours: f32) {
     agent.needs[Need::Thirst] += species.needs.thirst_per_h * delta_hours;
     let appetite = f32::from(agent.traits[Trait::Appetite]);
@@ -63,10 +64,12 @@ pub fn update_needs(agent: &mut Agent, species: &Species, view: &dyn WorldView, 
     } else {
         OFF_HOURS_FATIGUE_FACTOR
     };
-    agent.needs[Need::Fatigue] += species.needs.fatigue_per_h
-        * hour_factor
-        * (FATIGUE_FACTOR_MAX - energy / ENERGY_PER_FATIGUE_FACTOR)
-        * delta_hours;
+    if !is_resting(agent, species) {
+        agent.needs[Need::Fatigue] += species.needs.fatigue_per_h
+            * hour_factor
+            * (FATIGUE_FACTOR_MAX - energy / ENERGY_PER_FATIGUE_FACTOR)
+            * delta_hours;
+    }
     agent.needs[Need::Heat] += (if HOT_HOURS.contains(&hour) {
         HEAT_RISE_PER_H
     } else {
@@ -88,6 +91,8 @@ pub fn update_needs(agent: &mut Agent, species: &Species, view: &dyn WorldView, 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::agent::AgentState;
+    use crate::model::{Activity, Curve, Step, StepKind};
 
     const RATE_PER_H: f32 = 10.0;
     const TOLERANCE: f32 = 1e-4;
@@ -224,5 +229,30 @@ mod tests {
         update_needs(&mut agent, &Species::diurnal(RATE_PER_H), &at(NIGHT_H), 1.0);
         let expected = RATE_PER_H * OFF_HOURS_FATIGUE_FACTOR;
         assert!((agent.needs[Need::Fatigue] - expected).abs() <= TOLERANCE);
+    }
+
+    /// UT-065 Fatigue does not rise while the animal rests.
+    #[test]
+    fn fatigue_stays_while_resting() {
+        let mut species = Species::diurnal(RATE_PER_H);
+        let sleep = Activity {
+            need: Need::Fatigue,
+            curve: Curve::Linear,
+            weight: 1.0,
+            steps: vec![Step {
+                do_: StepKind::Rest,
+                secs: (1.0, 1.0),
+                anim: None,
+            }],
+        };
+        species.activities.insert("sleep".to_string(), sleep);
+        let mut agent = Agent::calm();
+        agent.state = AgentState::InActivity {
+            act: "sleep".to_string(),
+            step: 0,
+            t_left: 1.0,
+        };
+        update_needs(&mut agent, &species, &at(NIGHT_H), 1.0);
+        assert!((agent.needs[Need::Fatigue] - NEED_MIN).abs() <= TOLERANCE);
     }
 }
