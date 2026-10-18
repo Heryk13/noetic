@@ -6,6 +6,10 @@ use crate::model::{Curve, Routine};
 
 /// Need, 0–1, at which a Step curve jumps from no urge to full urge (ALG-10).
 const STEP_CURVE_THRESHOLD: f32 = 0.6;
+/// How much more resting weighs outside the active hours (API-COR-018).
+const OFF_HOURS_REST_FACTOR: f32 = 1.6;
+/// How much every other activity weighs outside them.
+const OFF_HOURS_OTHER_FACTOR: f32 = 0.35;
 
 // ==== Systems ================================================================
 
@@ -56,6 +60,18 @@ pub fn curve_eval(curve: Curve, x: f32) -> f32 {
     }
 }
 
+/// API-COR-018 What the daily rhythm multiplies an activity's score by: 1.0 inside
+/// the active hours; outside them, resting weighs more and everything else less.
+pub fn routine_factor(routine: Routine, hour: f32, is_rest: bool) -> f32 {
+    if is_active_hour(routine, hour) {
+        1.0
+    } else if is_rest {
+        OFF_HOURS_REST_FACTOR
+    } else {
+        OFF_HOURS_OTHER_FACTOR
+    }
+}
+
 // ==== Tests ==================================================================
 
 #[cfg(test)]
@@ -87,5 +103,25 @@ mod tests {
             assert_eq!(curve_eval(curve, 0.0), 0.0, "{curve:?} at 0");
             assert_eq!(curve_eval(curve, 1.0), 1.0, "{curve:?} at 1");
         }
+    }
+
+    // ---- routine_factor -----------------------------------------------------
+
+    /// UT-049 Outside the active hours resting weighs more and the rest less; inside
+    /// them nothing changes.
+    #[test]
+    fn the_daily_rhythm_favors_rest_outside_the_active_hours() {
+        let (noon, night) = (12.0, 2.0);
+        // the factors are the constants themselves, so they compare exactly
+        assert_eq!(routine_factor(Routine::Diurnal, noon, true), 1.0);
+        assert_eq!(routine_factor(Routine::Diurnal, noon, false), 1.0);
+        assert_eq!(
+            routine_factor(Routine::Diurnal, night, true),
+            OFF_HOURS_REST_FACTOR
+        );
+        assert_eq!(
+            routine_factor(Routine::Diurnal, night, false),
+            OFF_HOURS_OTHER_FACTOR
+        );
     }
 }
