@@ -86,12 +86,7 @@ pub fn update_needs(agent: &mut Agent, species: &Species, view: &dyn WorldView, 
 
 #[cfg(test)]
 mod tests {
-    use std::collections::BTreeMap;
-
     use super::*;
-    use crate::agent::TraitMap;
-    use crate::model::{Brain, ChooseSpec, NeedRates, Routine};
-    use crate::rng::Rng;
 
     const RATE_PER_H: f32 = 10.0;
     const TOLERANCE: f32 = 1e-4;
@@ -124,43 +119,14 @@ mod tests {
         (hours.start + hours.end) / 2.0
     }
 
-    fn calm_agent() -> Agent {
-        Agent {
-            needs: Needs::default(),
-            traits: TraitMap::default(),
-            limping: false,
-            fear: 0.0,
-            rng: Rng::seed(1),
-        }
-    }
-
-    fn species() -> Species {
-        Species {
-            needs: NeedRates {
-                hunger_per_h: RATE_PER_H,
-                thirst_per_h: RATE_PER_H,
-                fatigue_per_h: RATE_PER_H,
-                fear_threshold: NEED_MAX / 2.0,
-            },
-            routine: Routine::Diurnal,
-            brain: Brain {
-                choose: ChooseSpec {
-                    noise: 0.0,
-                    options: Vec::new(),
-                },
-            },
-            activities: BTreeMap::new(),
-        }
-    }
-
     // ---- update_needs -------------------------------------------------------
 
     /// UT-039 Thirst rises by the species rate for every game hour that passes.
     #[test]
     fn thirst_rises_with_the_hours() {
-        let mut agent = calm_agent();
+        let mut agent = Agent::calm();
         let hours = 2.0;
-        update_needs(&mut agent, &species(), &noon(), hours);
+        update_needs(&mut agent, &Species::diurnal(RATE_PER_H), &noon(), hours);
         let expected = RATE_PER_H * hours;
         assert!((agent.needs[Need::Thirst] - expected).abs() <= TOLERANCE);
     }
@@ -168,20 +134,20 @@ mod tests {
     /// UT-040 An animal of average appetite gets hungry exactly at the species rate.
     #[test]
     fn average_appetite_keeps_the_species_hunger_rate() {
-        let mut agent = calm_agent();
+        let mut agent = Agent::calm();
         // the appetite whose factor is exactly 1.0
         let average = (1.0 - HUNGER_FACTOR_MIN) * APPETITE_PER_HUNGER_FACTOR;
         agent.traits[Trait::Appetite] = average.round() as u8;
-        update_needs(&mut agent, &species(), &noon(), 1.0);
+        update_needs(&mut agent, &Species::diurnal(RATE_PER_H), &noon(), 1.0);
         assert!((agent.needs[Need::Hunger] - RATE_PER_H).abs() <= TOLERANCE);
     }
 
     /// UT-041 A need never goes past its maximum, however long the animal waits.
     #[test]
     fn needs_never_pass_their_maximum() {
-        let mut agent = calm_agent();
+        let mut agent = Agent::calm();
         agent.needs[Need::Hunger] = NEED_MAX - RATE_PER_H / 2.0;
-        update_needs(&mut agent, &species(), &noon(), 10.0);
+        update_needs(&mut agent, &Species::diurnal(RATE_PER_H), &noon(), 10.0);
         assert!((agent.needs[Need::Hunger] - NEED_MAX).abs() <= TOLERANCE);
         assert!((agent.needs[Need::Thirst] - NEED_MAX).abs() <= TOLERANCE);
     }
@@ -189,17 +155,22 @@ mod tests {
     /// UT-042 The urge to get out of the heat rises during the hot hours.
     #[test]
     fn heat_rises_in_the_hot_hours() {
-        let mut agent = calm_agent();
-        update_needs(&mut agent, &species(), &at(middle(HOT_HOURS)), 1.0);
+        let mut agent = Agent::calm();
+        update_needs(
+            &mut agent,
+            &Species::diurnal(RATE_PER_H),
+            &at(middle(HOT_HOURS)),
+            1.0,
+        );
         assert!((agent.needs[Need::Heat] - HEAT_RISE_PER_H).abs() <= TOLERANCE);
     }
 
     /// UT-043 Outside the hot hours that urge drops, and never below zero.
     #[test]
     fn heat_drops_at_night_and_stops_at_zero() {
-        let mut agent = calm_agent();
+        let mut agent = Agent::calm();
         agent.needs[Need::Heat] = HEAT_DROP_PER_H / 2.0;
-        update_needs(&mut agent, &species(), &at(NIGHT_H), 1.0);
+        update_needs(&mut agent, &Species::diurnal(RATE_PER_H), &at(NIGHT_H), 1.0);
         assert!((agent.needs[Need::Heat] - NEED_MIN).abs() <= TOLERANCE);
     }
 
@@ -208,8 +179,8 @@ mod tests {
     fn the_urge_to_sing_rises_at_dawn_and_dusk() {
         let hours = 0.5;
         for hour in [middle(MORNING_SONG_HOURS), middle(EVENING_SONG_HOURS)] {
-            let mut agent = calm_agent();
-            update_needs(&mut agent, &species(), &at(hour), hours);
+            let mut agent = Agent::calm();
+            update_needs(&mut agent, &Species::diurnal(RATE_PER_H), &at(hour), hours);
             let expected = SING_RISE_PER_H * hours;
             assert!(
                 (agent.needs[Need::Sing] - expected).abs() <= TOLERANCE,
@@ -222,9 +193,9 @@ mod tests {
     /// UT-045 Outside the song hours the urge to sing drops.
     #[test]
     fn the_urge_to_sing_drops_at_midday() {
-        let mut agent = calm_agent();
+        let mut agent = Agent::calm();
         agent.needs[Need::Sing] = NEED_MAX;
-        update_needs(&mut agent, &species(), &noon(), 1.0);
+        update_needs(&mut agent, &Species::diurnal(RATE_PER_H), &noon(), 1.0);
         let expected = NEED_MAX - SING_DROP_PER_H;
         assert!((agent.needs[Need::Sing] - expected).abs() <= TOLERANCE);
     }
@@ -238,18 +209,18 @@ mod tests {
     /// rate.
     #[test]
     fn average_energy_tires_at_the_species_rate() {
-        let mut agent = calm_agent();
+        let mut agent = Agent::calm();
         agent.traits[Trait::Energy] = average_energy();
-        update_needs(&mut agent, &species(), &noon(), 1.0);
+        update_needs(&mut agent, &Species::diurnal(RATE_PER_H), &noon(), 1.0);
         assert!((agent.needs[Need::Fatigue] - RATE_PER_H).abs() <= TOLERANCE);
     }
 
     /// UT-048 Outside its active hours the same animal tires faster.
     #[test]
     fn fatigue_rises_faster_outside_the_active_hours() {
-        let mut agent = calm_agent();
+        let mut agent = Agent::calm();
         agent.traits[Trait::Energy] = average_energy();
-        update_needs(&mut agent, &species(), &at(NIGHT_H), 1.0);
+        update_needs(&mut agent, &Species::diurnal(RATE_PER_H), &at(NIGHT_H), 1.0);
         let expected = RATE_PER_H * OFF_HOURS_FATIGUE_FACTOR;
         assert!((agent.needs[Need::Fatigue] - expected).abs() <= TOLERANCE);
     }

@@ -171,47 +171,13 @@ pub fn choose_activity(
 
 #[cfg(test)]
 mod tests {
-    use std::collections::BTreeMap;
-
     use super::*;
-    use crate::agent::TraitMap;
-    use crate::agent::needs::Needs;
-    use crate::model::{Activity, Brain, ChooseSpec, NeedRates};
-    use crate::rng::Rng;
+    use crate::model::{Activity, ChooseSpec};
 
     const TOLERANCE: f32 = 1e-4;
     const NOON_H: f32 = 12.0;
     /// Outside the active hours of a diurnal species.
     const NIGHT_H: f32 = 2.0;
-
-    fn calm_agent() -> Agent {
-        Agent {
-            needs: Needs::default(),
-            traits: TraitMap::default(),
-            limping: false,
-            fear: 0.0,
-            rng: Rng::seed(1),
-        }
-    }
-
-    fn diurnal() -> Species {
-        Species {
-            needs: NeedRates {
-                hunger_per_h: 0.0,
-                thirst_per_h: 0.0,
-                fatigue_per_h: 0.0,
-                fear_threshold: NEED_MAX / 2.0,
-            },
-            routine: Routine::Diurnal,
-            brain: Brain {
-                choose: ChooseSpec {
-                    noise: 0.0,
-                    options: Vec::new(),
-                },
-            },
-            activities: BTreeMap::new(),
-        }
-    }
 
     fn close(actual: f32, expected: f32) -> bool {
         (actual - expected).abs() <= TOLERANCE
@@ -268,12 +234,15 @@ mod tests {
     /// UT-050 Most needs pull by their value, and safety by what is missing of it.
     #[test]
     fn a_need_pulls_by_its_value_and_safety_by_its_lack() {
-        let mut agent = calm_agent();
+        let mut agent = Agent::calm();
         agent.needs[Need::Hunger] = 70.0;
         agent.needs[Need::Safety] = 30.0;
-        assert!(close(drive(&agent, &diurnal(), Need::Hunger, NOON_H), 70.0));
         assert!(close(
-            drive(&agent, &diurnal(), Need::Safety, NOON_H),
+            drive(&agent, &Species::diurnal(0.0), Need::Hunger, NOON_H),
+            70.0
+        ));
+        assert!(close(
+            drive(&agent, &Species::diurnal(0.0), Need::Safety, NOON_H),
             NEED_MAX - 30.0
         ));
     }
@@ -282,10 +251,10 @@ mod tests {
     /// animal limps.
     #[test]
     fn fatigue_pulls_harder_off_hours_and_when_limping() {
-        let mut agent = calm_agent();
+        let mut agent = Agent::calm();
         let fatigue = 40.0;
         agent.needs[Need::Fatigue] = fatigue;
-        let pull = |agent: &Agent, hour| drive(agent, &diurnal(), Need::Fatigue, hour);
+        let pull = |agent: &Agent, hour| drive(agent, &Species::diurnal(0.0), Need::Fatigue, hour);
         assert!(close(pull(&agent, NOON_H), fatigue));
         assert!(close(
             pull(&agent, NIGHT_H),
@@ -299,29 +268,35 @@ mod tests {
     /// UT-052 Fear and calm follow the fear the animal feels now.
     #[test]
     fn fear_and_calm_follow_the_fear_felt_now() {
-        let mut agent = calm_agent();
+        let mut agent = Agent::calm();
         let felt = 50.0;
         agent.fear = felt;
         let fear = FEAR_DRIVE_BASE + felt * FEAR_DRIVE_PER_FEAR;
         let calm = (NEED_MAX - felt) * CALM_DRIVE_PER_CALM;
-        assert!(close(drive(&agent, &diurnal(), Need::Fear, NOON_H), fear));
-        assert!(close(drive(&agent, &diurnal(), Need::Calm, NOON_H), calm));
+        assert!(close(
+            drive(&agent, &Species::diurnal(0.0), Need::Fear, NOON_H),
+            fear
+        ));
+        assert!(close(
+            drive(&agent, &Species::diurnal(0.0), Need::Calm, NOON_H),
+            calm
+        ));
     }
 
     /// UT-053 Curiosity and boredom follow the traits the animal was born with.
     #[test]
     fn curiosity_and_boredom_follow_the_traits() {
-        let mut agent = calm_agent();
+        let mut agent = Agent::calm();
         agent.traits[Trait::Curiosity] = 50;
         agent.traits[Trait::Energy] = 50;
         let curiosity = CURIOSITY_DRIVE_BASE + 50.0 * CURIOSITY_DRIVE_PER_TRAIT;
         let boredom = BOREDOM_DRIVE_BASE + 50.0 * BOREDOM_DRIVE_PER_ENERGY;
         assert!(close(
-            drive(&agent, &diurnal(), Need::Curiosity, NOON_H),
+            drive(&agent, &Species::diurnal(0.0), Need::Curiosity, NOON_H),
             curiosity
         ));
         assert!(close(
-            drive(&agent, &diurnal(), Need::Boredom, NOON_H),
+            drive(&agent, &Species::diurnal(0.0), Need::Boredom, NOON_H),
             boredom
         ));
     }
@@ -329,18 +304,24 @@ mod tests {
     /// UT-054 Marking and fighting pull nothing until scent marks and fights exist.
     #[test]
     fn marking_and_fighting_pull_nothing_yet() {
-        let mut agent = calm_agent();
+        let mut agent = Agent::calm();
         agent.needs[Need::Mark] = NEED_MAX;
         agent.needs[Need::Fight] = NEED_MAX;
-        assert!(close(drive(&agent, &diurnal(), Need::Mark, NOON_H), 0.0));
-        assert!(close(drive(&agent, &diurnal(), Need::Fight, NOON_H), 0.0));
+        assert!(close(
+            drive(&agent, &Species::diurnal(0.0), Need::Mark, NOON_H),
+            0.0
+        ));
+        assert!(close(
+            drive(&agent, &Species::diurnal(0.0), Need::Fight, NOON_H),
+            0.0
+        ));
     }
 
     // ---- choose_activity ----------------------------------------------------
 
     /// A diurnal species offering `options`, with one linear activity per `(name, need)`.
     fn offering(options: &[&str], activities: &[(&str, Need)], noise: f32) -> Species {
-        let mut species = diurnal();
+        let mut species = Species::diurnal(0.0);
         species.brain.choose = ChooseSpec {
             noise,
             options: options.iter().map(ToString::to_string).collect(),
@@ -359,7 +340,7 @@ mod tests {
     /// UT-055 The activity whose need pulls hardest wins, and every score comes back.
     #[test]
     fn the_hungriest_need_wins() {
-        let mut agent = calm_agent();
+        let mut agent = Agent::calm();
         agent.needs[Need::Hunger] = 80.0;
         agent.needs[Need::Thirst] = 20.0;
         let eat_or_drink = [("eat", Need::Hunger), ("drink", Need::Thirst)];
@@ -375,7 +356,7 @@ mod tests {
     /// the order of the options.
     #[test]
     fn a_tie_goes_to_the_first_name() {
-        let mut agent = calm_agent();
+        let mut agent = Agent::calm();
         agent.needs[Need::Hunger] = 50.0;
         let both_graze = [("graze_b", Need::Hunger), ("graze_a", Need::Hunger)];
         let species = offering(&["graze_b", "graze_a"], &both_graze, 0.0);
@@ -387,7 +368,7 @@ mod tests {
     /// chosen instead of a panic.
     #[test]
     fn nothing_to_choose_gives_none() {
-        let mut agent = calm_agent();
+        let mut agent = Agent::calm();
         assert_eq!(
             choose_activity(&mut agent, &offering(&[], &[], 0.0), NOON_H),
             None
@@ -401,7 +382,7 @@ mod tests {
     fn the_same_seed_scores_the_same() {
         let eat_or_drink = [("eat", Need::Hunger), ("drink", Need::Thirst)];
         let species = offering(&["eat", "drink"], &eat_or_drink, 0.3);
-        let mut first = calm_agent();
+        let mut first = Agent::calm();
         first.needs[Need::Hunger] = 50.0;
         let mut second = first.clone();
         assert_eq!(

@@ -103,3 +103,29 @@ pub struct ChooseSpec {
 pub struct Brain {
     pub choose: ChooseSpec,
 }
+
+// ==== Tests ==================================================================
+
+#[cfg(test)]
+impl Species {
+    /// A diurnal species for the tests of every file: hunger, thirst and fatigue all rise
+    /// at `rate_per_h`, and it offers nothing to choose.
+    pub(crate) fn diurnal(rate_per_h: f32) -> Self {
+        Species {
+            needs: NeedRates {
+                hunger_per_h: rate_per_h,
+                thirst_per_h: rate_per_h,
+                fatigue_per_h: rate_per_h,
+                fear_threshold: crate::agent::needs::NEED_MAX / 2.0,
+            },
+            routine: Routine::Diurnal,
+            brain: Brain {
+                choose: ChooseSpec {
+                    noise: 0.0,
+                    options: Vec::new(),
+                },
+            },
+            activities: BTreeMap::new(),
+        }
+    }
+}
