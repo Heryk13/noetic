@@ -1,8 +1,10 @@
 //! The needs of one animal and how they rise with time, the hour and the place (ALG-02).
 use enum_map::EnumMap;
+use std::ops::Range;
 
 use crate::agent::Agent;
 use crate::model::{Need, Species, Trait};
+use crate::world::WorldView;
 
 // ==== Config =================================================================
 
@@ -14,6 +16,20 @@ const APPETITE_PER_HUNGER_FACTOR: f32 = 125.0;
 const NEED_MIN: f32 = 0.0;
 /// Highest value of any need.
 const NEED_MAX: f32 = 100.0;
+/// Hours of the day when the urge to get out of the heat rises (ALG-02).
+const HOT_HOURS: Range<f32> = 10.5..16.5;
+/// How fast that urge rises per game hour inside the hot hours.
+const HEAT_RISE_PER_H: f32 = 40.0;
+/// How fast it drops per game hour outside them.
+const HEAT_DROP_PER_H: f32 = 30.0;
+/// Morning hours when the urge to sing rises, the dawn chorus (ALG-02).
+const MORNING_SONG_HOURS: Range<f32> = 5.0..10.0;
+/// Evening hours when it rises again.
+const EVENING_SONG_HOURS: Range<f32> = 16.0..19.0;
+/// How fast the urge to sing rises per game hour inside the song hours.
+const SING_RISE_PER_H: f32 = 90.0;
+/// How fast it drops per game hour outside them.
+const SING_DROP_PER_H: f32 = 50.0;
 
 // ==== Needs ==================================================================
 
@@ -22,14 +38,27 @@ pub type Needs = EnumMap<Need, f32>;
 
 // ==== Systems ================================================================
 
-/// API-COR-002 Raises hunger and thirst with the game hours that passed; hunger also
-/// follows the animal's appetite.
-pub fn update_needs(agent: &mut Agent, species: &Species, delta_hours: f32) {
+/// API-COR-002 Moves the needs with the game hours that passed: hunger and thirst rise
+/// at the species rate (hunger also with appetite), heat and the urge to sing follow
+/// the hour; every need stays within 0–100.
+pub fn update_needs(agent: &mut Agent, species: &Species, view: &dyn WorldView, delta_hours: f32) {
     agent.needs[Need::Thirst] += species.needs.thirst_per_h * delta_hours;
     let appetite = f32::from(agent.traits[Trait::Appetite]);
     agent.needs[Need::Hunger] += species.needs.hunger_per_h
         * (HUNGER_FACTOR_MIN + appetite / APPETITE_PER_HUNGER_FACTOR)
         * delta_hours;
+    let hour = view.hour();
+    agent.needs[Need::Heat] += (if HOT_HOURS.contains(&hour) {
+        HEAT_RISE_PER_H
+    } else {
+        -HEAT_DROP_PER_H
+    }) * delta_hours;
+    agent.needs[Need::Sing] +=
+        (if MORNING_SONG_HOURS.contains(&hour) || EVENING_SONG_HOURS.contains(&hour) {
+            SING_RISE_PER_H
+        } else {
+            -SING_DROP_PER_H
+        }) * delta_hours;
     for v in agent.needs.values_mut() {
         *v = v.clamp(NEED_MIN, NEED_MAX);
     }
@@ -45,6 +74,34 @@ mod tests {
 
     const RATE_PER_H: f32 = 10.0;
     const TOLERANCE: f32 = 1e-4;
+    /// An hour these tests do not depend on.
+    const NOON_H: f32 = 12.0;
+    /// An hour outside every range of the needs that follow the hour.
+    const NIGHT_H: f32 = 2.0;
+
+    /// A world that only knows the hour.
+    struct FakeWorld {
+        hour: f32,
+    }
+
+    impl WorldView for FakeWorld {
+        fn hour(&self) -> f32 {
+            self.hour
+        }
+    }
+
+    fn noon() -> FakeWorld {
+        FakeWorld { hour: NOON_H }
+    }
+
+    fn at(hour: f32) -> FakeWorld {
+        FakeWorld { hour }
+    }
+
+    /// The hour in the middle of a range, away from its edges.
+    fn middle(hours: Range<f32>) -> f32 {
+        (hours.start + hours.end) / 2.0
+    }
 
     fn calm_agent() -> Agent {
         Agent {
@@ -72,7 +129,7 @@ mod tests {
     fn thirst_rises_with_the_hours() {
         let mut agent = calm_agent();
         let hours = 2.0;
-        update_needs(&mut agent, &species(), hours);
+        update_needs(&mut agent, &species(), &noon(), hours);
         let expected = RATE_PER_H * hours;
         assert!((agent.needs[Need::Thirst] - expected).abs() <= TOLERANCE);
     }
@@ -84,7 +141,7 @@ mod tests {
         // the appetite whose factor is exactly 1.0
         let average = (1.0 - HUNGER_FACTOR_MIN) * APPETITE_PER_HUNGER_FACTOR;
         agent.traits[Trait::Appetite] = average.round() as u8;
-        update_needs(&mut agent, &species(), 1.0);
+        update_needs(&mut agent, &species(), &noon(), 1.0);
         assert!((agent.needs[Need::Hunger] - RATE_PER_H).abs() <= TOLERANCE);
     }
 
@@ -93,8 +150,51 @@ mod tests {
     fn needs_never_pass_their_maximum() {
         let mut agent = calm_agent();
         agent.needs[Need::Hunger] = NEED_MAX - RATE_PER_H / 2.0;
-        update_needs(&mut agent, &species(), 10.0);
+        update_needs(&mut agent, &species(), &noon(), 10.0);
         assert!((agent.needs[Need::Hunger] - NEED_MAX).abs() <= TOLERANCE);
         assert!((agent.needs[Need::Thirst] - NEED_MAX).abs() <= TOLERANCE);
+    }
+
+    /// UT-042 The urge to get out of the heat rises during the hot hours.
+    #[test]
+    fn heat_rises_in_the_hot_hours() {
+        let mut agent = calm_agent();
+        update_needs(&mut agent, &species(), &at(middle(HOT_HOURS)), 1.0);
+        assert!((agent.needs[Need::Heat] - HEAT_RISE_PER_H).abs() <= TOLERANCE);
+    }
+
+    /// UT-043 Outside the hot hours that urge drops, and never below zero.
+    #[test]
+    fn heat_drops_at_night_and_stops_at_zero() {
+        let mut agent = calm_agent();
+        agent.needs[Need::Heat] = HEAT_DROP_PER_H / 2.0;
+        update_needs(&mut agent, &species(), &at(NIGHT_H), 1.0);
+        assert!((agent.needs[Need::Heat] - NEED_MIN).abs() <= TOLERANCE);
+    }
+
+    /// UT-044 The urge to sing rises in both the morning and the evening song hours.
+    #[test]
+    fn the_urge_to_sing_rises_at_dawn_and_dusk() {
+        let hours = 0.5;
+        for hour in [middle(MORNING_SONG_HOURS), middle(EVENING_SONG_HOURS)] {
+            let mut agent = calm_agent();
+            update_needs(&mut agent, &species(), &at(hour), hours);
+            let expected = SING_RISE_PER_H * hours;
+            assert!(
+                (agent.needs[Need::Sing] - expected).abs() <= TOLERANCE,
+                "at {hour} h the urge to sing is {}, expected {expected}",
+                agent.needs[Need::Sing]
+            );
+        }
+    }
+
+    /// UT-045 Outside the song hours the urge to sing drops.
+    #[test]
+    fn the_urge_to_sing_drops_at_midday() {
+        let mut agent = calm_agent();
+        agent.needs[Need::Sing] = NEED_MAX;
+        update_needs(&mut agent, &species(), &noon(), 1.0);
+        let expected = NEED_MAX - SING_DROP_PER_H;
+        assert!((agent.needs[Need::Sing] - expected).abs() <= TOLERANCE);
     }
 }
