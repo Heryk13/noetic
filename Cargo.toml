@@ -12,6 +12,13 @@ readme = "README.md"
 keywords = ["bevy", "gamedev", "ai", "behavior", "animals"]
 categories = ["game-development", "simulation"]
 
+# one version per crate for the whole workspace; the members allowed to use each one are
+# listed in Internal Design 2.2
+[workspace.dependencies]
+# seeded PRNG behind noetic_core::rng (NFR-01, Basic Design T-05)
+rand = { version = "0.10", default-features = false, features = ["alloc"] }
+rand_pcg = "0.10"
+
 [workspace.lints.rust]
 # Internal Design CS-02
 unsafe_code = "forbid"
