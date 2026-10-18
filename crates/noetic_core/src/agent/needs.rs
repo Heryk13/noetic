@@ -16,7 +16,7 @@ const APPETITE_PER_HUNGER_FACTOR: f32 = 125.0;
 /// Lowest value of any need.
 const NEED_MIN: f32 = 0.0;
 /// Highest value of any need.
-const NEED_MAX: f32 = 100.0;
+pub(crate) const NEED_MAX: f32 = 100.0;
 /// Hours of the day when the urge to get out of the heat rises (ALG-02).
 const HOT_HOURS: Range<f32> = 10.5..16.5;
 /// How fast that urge rises per game hour inside the hot hours.
@@ -126,6 +126,7 @@ mod tests {
             needs: Needs::default(),
             traits: TraitMap::default(),
             limping: false,
+            fear: 0.0,
         }
     }
 
