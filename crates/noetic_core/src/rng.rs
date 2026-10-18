@@ -103,4 +103,13 @@ mod tests {
             assert_eq!(weighted_pick(&items, &mut rng), Some(&"a"));
         }
     }
+
+    /// UT-003 Nothing to pick gives None instead of a panic.
+    #[test]
+    fn an_empty_or_weightless_list_picks_nothing() {
+        let mut rng = Rng::seed(1);
+        let empty: [(&str, u8); 0] = [];
+        assert_eq!(weighted_pick(&empty, &mut rng), None);
+        assert_eq!(weighted_pick(&[("a", 0), ("b", 0)], &mut rng), None);
+    }
 }

@@ -41,7 +41,27 @@ pub enum Routine {
     MorningAfternoon,
 }
 
+/// TYP-10 A personality trait, 0–100: how fearful, curious, social, hungry,
+/// energetic, stubborn or aggressive one animal is born (ALG-09).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Enum)]
+pub enum Trait {
+    Fear,
+    Curiosity,
+    Social,
+    Appetite,
+    Energy,
+    Stubborn,
+    Aggro,
+}
+
 // ==== Species ================================================================
+
+/// TYP-01 A species as its `.noetic.ron` file describes it; only the needs so far, the
+/// rest of the schema joins as the code that reads it does.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Species {
+    pub needs: NeedRates,
+}
 
 /// How fast hunger, thirst and fatigue rise per game hour (0–60 each), and the fear
 /// (0–100) above which the animal reacts; the other needs follow their driver
