@@ -16,7 +16,7 @@ const HUNGER_FACTOR_MIN: f32 = 0.6;
 /// Appetite points that add 1.0 to the hunger factor (ALG-02).
 const APPETITE_PER_HUNGER_FACTOR: f32 = 125.0;
 /// Lowest value of any need.
-const NEED_MIN: f32 = 0.0;
+pub(crate) const NEED_MIN: f32 = 0.0;
 /// Highest value of any need.
 pub(crate) const NEED_MAX: f32 = 100.0;
 /// Hours of the day when the urge to get out of the heat rises (ALG-02).

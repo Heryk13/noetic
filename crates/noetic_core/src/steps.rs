@@ -1,5 +1,6 @@
 //! How an animal does an activity, one step at a time: each step lasts a drawn time and
 //! may lower a need while it runs (API-COR-011).
+use crate::agent::needs::NEED_MIN;
 use crate::agent::{Agent, AgentState};
 use crate::model::{Activity, Need, Species, Step, StepKind};
 
@@ -50,7 +51,8 @@ pub fn enter_step(agent: &mut Agent, act: &str, activity: &Activity, index: usiz
 }
 
 /// API-COR-011 Runs one step of the activity the animal is in for `dt` seconds: lowers
-/// the step's need, counts its time down and says whether it is over. A `GoTo` fails
+/// the step's need, never below its lowest value, counts its time down and says
+/// whether it is over. A `GoTo` fails
 /// until the world can tell where things are, and so does a step run outside an
 /// activity; nothing changes on a failure.
 pub fn run_step(agent: &mut Agent, step: &Step, dt: f32) -> StepStatus {
@@ -61,7 +63,7 @@ pub fn run_step(agent: &mut Agent, step: &Step, dt: f32) -> StepStatus {
         return StepStatus::Failed;
     };
     if let Some((need, per_s)) = relief(step.do_) {
-        agent.needs[need] -= per_s * dt;
+        agent.needs[need] = (agent.needs[need] - per_s * dt).max(NEED_MIN);
     }
     *t_left -= dt;
     if *t_left > 0.0 {
@@ -220,6 +222,16 @@ mod tests {
             StepStatus::Failed
         );
         assert_eq!(choosing, before);
+    }
+
+    /// UT-069 A step lowers its need down to the lowest value and never past it.
+    #[test]
+    fn a_step_never_lowers_a_need_below_its_lowest() {
+        let mut agent = eating();
+        // a run that would take off twice the hunger the animal has
+        let dt = HUNGER * 2.0 / EAT_HUNGER_DROP_PER_S;
+        run_step(&mut agent, &step(StepKind::Eat), dt);
+        assert!((agent.needs[Need::Hunger] - NEED_MIN).abs() <= TOLERANCE);
     }
 
     // ---- enter_step and do_activity -----------------------------------------
