@@ -15,17 +15,29 @@ const HOURS_PER_DAY: f32 = 24.0;
 // ==== Systems ================================================================
 
 /// API-COR-001 One step of the world for `dt` real seconds: the clock moves on
-/// (PRC-01), then every animal in id order thinks and acts; an animal whose species is
-/// missing stays idle (NFR-12). Every animal thinks on every step until `think_due`
-/// (API-COR-023) joins; the returned events and the effects join with their code.
+/// (PRC-01), then every animal thinks and after that every animal acts, each in id
+/// order, as the Think and Act sets of the game run them (NFR-02); an animal whose
+/// species is missing stays idle (NFR-12), and a `dt` that is negative, NaN or infinite counts as
+/// 0. Every animal thinks on every step until `think_due` (API-COR-023) joins; the
+/// returned events and the effects join with their code.
 pub fn tick(world: &mut SimWorld, dt: f32) {
+    // the game passes dt in, and one bad value would leave the clock and every need
+    // NaN for good, or run time backwards
+    let dt = if dt.is_finite() { dt.max(0.0) } else { 0.0 };
     let delta_hours = game_hours(&world.clock, dt);
     world.clock.hour = (world.clock.hour + delta_hours).rem_euclid(HOURS_PER_DAY);
+    // all think before any acts: once perception reads what act moves, an animal
+    // must see the others where the step began, as in the game
     for agent in &mut world.agents {
         let Some(species) = world.species.get(&agent.species) else {
             continue;
         };
         think_agent(agent, species, &world.clock, dt);
+    }
+    for agent in &mut world.agents {
+        let Some(species) = world.species.get(&agent.species) else {
+            continue;
+        };
         act_agent(agent, species, dt);
     }
 }
@@ -58,7 +70,7 @@ mod tests {
     use std::collections::BTreeMap;
 
     use super::*;
-    use crate::model::Need;
+    use crate::model::{Activity, Curve, Need, Step, StepKind};
     use crate::world::Clock;
 
     const TOLERANCE: f32 = 1e-4;
@@ -118,5 +130,49 @@ mod tests {
         tick(&mut world, SECS_PER_GAME_HOUR);
         assert!((world.clock.hour - NOON_H).abs() < TOLERANCE);
         assert_eq!(world.agents.first(), Some(&Agent::calm()));
+    }
+
+    /// UT-071 A step that is negative, NaN or infinite changes nothing.
+    #[test]
+    fn a_bad_step_changes_nothing() {
+        for dt in [-SECS_PER_GAME_HOUR, f32::NAN, f32::INFINITY] {
+            let mut world = world(NOON_H, SECS_PER_GAME_HOUR);
+            let before = world.clone();
+            tick(&mut world, dt);
+            assert_eq!(world, before, "dt {dt}");
+        }
+    }
+
+    // ---- think_agent --------------------------------------------------------
+
+    /// UT-038 The same animal, world and step think the same twice, the choice and
+    /// its noise included.
+    #[test]
+    fn the_same_animal_thinks_the_same_twice() {
+        let mut species = Species::diurnal(RATE_PER_H);
+        species.brain.choose.noise = 0.3;
+        species.brain.choose.options = vec!["graze".to_string()];
+        let graze = Activity {
+            need: Need::Hunger,
+            curve: Curve::Linear,
+            weight: 1.0,
+            steps: vec![Step {
+                do_: StepKind::Eat,
+                secs: (1.0, 2.0),
+                anim: None,
+            }],
+        };
+        species.activities.insert("graze".to_string(), graze);
+        let clock = Clock {
+            hour: NOON_H,
+            secs_per_game_hour: SECS_PER_GAME_HOUR,
+        };
+        let mut first = Agent::calm();
+        let mut second = first.clone();
+        think_agent(&mut first, &species, &clock, SECS_PER_GAME_HOUR);
+        think_agent(&mut second, &species, &clock, SECS_PER_GAME_HOUR);
+        assert_eq!(first, second);
+        // it did choose, so the noise and the drawn step time were part of the run
+        assert!(matches!(first.state, AgentState::InActivity { .. }));
     }
 }

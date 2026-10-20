@@ -32,7 +32,7 @@ it is a decision. An exception without one is drift.
   (Internal Design › 4 Dependencies, DEP-01 to DEP-07).
 - Inside the editor, feature modules (`brain`, `world`, `species`, `individuals`, `io`,
   `remote`) never import each other: they talk through Commands, Events and shared Resources.
-- `#![forbid(unsafe_code)]` in every crate.
+- No `unsafe`: `unsafe_code = "forbid"` in the workspace `[lints]`, which every crate inherits.
 
 ### File layout
 
@@ -183,5 +183,5 @@ The character tells the kind of boundary:
 - Every crate has to move to the next Bevy release before Noetic can, so a crate that depends
   on Bevy costs more than one that does not.
 - The allowed crates per workspace member are listed in Internal Design › 2 Workspace.
-  `cargo-deny` checks the layering and every dependency license; review a new license before
-  allowing it.
+  `cargo-deny` is to check the layering and every dependency license once the CI exists; until
+  then review checks them. Review a new license before allowing it.

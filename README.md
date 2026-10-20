@@ -4,7 +4,15 @@ Open-source editor and runtime, written in Rust + Bevy, for game animals that fe
 
 Behavior is built and tested in a 2D editor, exported to a `.noetic.ron` file and loaded by the game through the `noetic` crate.
 
-> Status: design phase. The Cargo workspace exists, with no behavior yet.
+> Status: milestone M1 (Core) is done. `noetic_core` ticks needs, picks an activity by Utility score
+> and runs it step by step, deterministic from a seed and covered by unit tests and a golden
+> determinism test. There is no Bevy plugin or editor yet.
+
+## Development
+
+- `just check`: formatting, clippy and every test
+- `just fix`: apply clippy fixes and format the code
+- `just test`: the tests only
 
 ## Documentation
 

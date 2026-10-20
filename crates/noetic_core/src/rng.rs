@@ -36,10 +36,11 @@ impl Rng {
     }
 
     /// Draws a number between `min` and `max`, any value equally likely; `min` when
-    /// the range is empty.
+    /// the range is empty or not finite (a NaN or an infinite end).
     pub fn range(&mut self, min: f32, max: f32) -> f32 {
-        // random_range panics on an empty range, and the core never panics (EP-01)
-        if max <= min {
+        // random_range panics on an empty or non-finite range, and the core never
+        // panics (EP-01); a NaN fails both comparisons and lands here too
+        if !(max - min).is_finite() || max <= min {
             return min;
         }
         self.0.random_range(min..max)
@@ -79,15 +80,16 @@ mod tests {
     #[test]
     fn picks_follow_their_weights() {
         const PICKS: u32 = 100_000;
+        const TOTAL: u8 = 100;
         const WEIGHT_A: u8 = 60;
         const TOLERANCE: f32 = 0.01;
-        let items = [("a", WEIGHT_A), ("b", 100 - WEIGHT_A)];
+        let items = [("a", WEIGHT_A), ("b", TOTAL - WEIGHT_A)];
         let mut rng = Rng::seed(1);
         let a_count = (0..PICKS)
             .filter(|_| weighted_pick(&items, &mut rng) == Some(&"a"))
             .count();
         let a_share = a_count as f32 / PICKS as f32;
-        let expected = f32::from(WEIGHT_A) / 100.0;
+        let expected = f32::from(WEIGHT_A) / f32::from(TOTAL);
         assert!(
             (a_share - expected).abs() <= TOLERANCE,
             "a came out {a_share}, expected {expected} ± {TOLERANCE}"
@@ -111,5 +113,19 @@ mod tests {
         let empty: [(&str, u8); 0] = [];
         assert_eq!(weighted_pick(&empty, &mut rng), None);
         assert_eq!(weighted_pick(&[("a", 0), ("b", 0)], &mut rng), None);
+    }
+
+    // ---- range --------------------------------------------------------------
+
+    /// UT-070 A range with a NaN or an infinite end gives its lower end instead of a
+    /// panic.
+    #[test]
+    fn a_range_that_is_not_finite_gives_its_lower_end() {
+        let mut rng = Rng::seed(1);
+        // the lower end comes back untouched, so it compares exactly
+        assert_eq!(rng.range(0.0, f32::INFINITY), 0.0);
+        assert_eq!(rng.range(-f32::MAX, f32::MAX), -f32::MAX);
+        assert!(rng.range(f32::NAN, 1.0).is_nan());
+        assert_eq!(rng.range(0.0, f32::NAN), 0.0);
     }
 }

@@ -93,6 +93,7 @@ mod tests {
     use super::*;
     use crate::agent::AgentState;
     use crate::model::{Activity, Curve, Step, StepKind};
+    use crate::world::Clock;
 
     const RATE_PER_H: f32 = 10.0;
     const TOLERANCE: f32 = 1e-4;
@@ -103,27 +104,17 @@ mod tests {
     /// A game hour of one real minute; these tests pass game hours directly.
     const SECS_PER_GAME_HOUR: f32 = 60.0;
 
-    /// A world that only knows the hour.
-    struct FakeWorld {
-        hour: f32,
-    }
-
-    impl WorldView for FakeWorld {
-        fn hour(&self) -> f32 {
-            self.hour
-        }
-
-        fn secs_per_game_hour(&self) -> f32 {
-            SECS_PER_GAME_HOUR
+    /// A world at `hour`; these tests only ask it the hour.
+    fn at(hour: f32) -> Clock {
+        Clock {
+            hour,
+            secs_per_game_hour: SECS_PER_GAME_HOUR,
         }
     }
 
-    fn noon() -> FakeWorld {
-        FakeWorld { hour: NOON_H }
-    }
-
-    fn at(hour: f32) -> FakeWorld {
-        FakeWorld { hour }
+    /// A world at `NOON_H`.
+    fn noon() -> Clock {
+        at(NOON_H)
     }
 
     /// The hour in the middle of a range, away from its edges.
@@ -159,7 +150,9 @@ mod tests {
     fn needs_never_pass_their_maximum() {
         let mut agent = Agent::calm();
         agent.needs[Need::Hunger] = NEED_MAX - RATE_PER_H / 2.0;
-        update_needs(&mut agent, &Species::diurnal(RATE_PER_H), &noon(), 10.0);
+        // long enough for thirst, from 0, to rise twice its maximum
+        let hours = 2.0 * NEED_MAX / RATE_PER_H;
+        update_needs(&mut agent, &Species::diurnal(RATE_PER_H), &noon(), hours);
         assert!((agent.needs[Need::Hunger] - NEED_MAX).abs() <= TOLERANCE);
         assert!((agent.needs[Need::Thirst] - NEED_MAX).abs() <= TOLERANCE);
     }

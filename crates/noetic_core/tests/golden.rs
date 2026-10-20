@@ -20,10 +20,11 @@ const SECS_PER_GAME_HOUR: f32 = 30.0;
 /// Dawn, so the run crosses the active hours, dusk and the night.
 const START_H: f32 = 6.0;
 const AGENT_COUNT: u64 = 4;
-/// The hash of the default world after `TICKS` steps. A change to the simulation, or a
-/// `rand` upgrade that changes the draws of a seed, refreshes it on purpose
-/// (Detailed Design 0.12).
-const GOLDEN: u64 = 0x5a44_cdb4_b9da_a2fe;
+/// The hash of the default world after `TICKS` steps. A change to the simulation, a
+/// `rand` upgrade that changes the draws of a seed (Detailed Design 0.12), or a
+/// `rand_pcg`, `enum-map` or Rust upgrade that changes how `Debug` prints the world
+/// refreshes it on purpose.
+const GOLDEN: u64 = 0x9cfd_897f_3d6e_9fb6;
 
 // ---- FNV-1a 64 --------------------------------------------------------------
 
@@ -137,8 +138,8 @@ fn fnv1a(bytes: &[u8]) -> u64 {
 
 // ==== Tests ==================================================================
 
-/// UT-025 The default world run from seed 42 for 1000 ticks always ends in the golden
-/// state, bit for bit on the same platform.
+/// UT-025 The default world run from `SEED` for `TICKS` ticks always ends in the
+/// golden state, bit for bit on the same platform.
 #[test]
 fn the_default_world_always_ends_in_the_golden_state() {
     let mut world = default_world();

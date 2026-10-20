@@ -34,7 +34,7 @@ pub enum StepStatus {
 /// Puts the animal in step `index` of activity `act` with its time drawn from the
 /// step's `secs` (the start of API-COR-011); past the last step the activity is over
 /// and the animal goes back to choosing.
-pub fn enter_step(agent: &mut Agent, act: &str, activity: &Activity, index: usize) {
+pub(crate) fn enter_step(agent: &mut Agent, act: &str, activity: &Activity, index: usize) {
     match activity.steps.get(index) {
         Some(step) => {
             let t_left = agent.rng.range(step.secs.0, step.secs.1);
@@ -51,10 +51,10 @@ pub fn enter_step(agent: &mut Agent, act: &str, activity: &Activity, index: usiz
 }
 
 /// API-COR-011 Runs one step of the activity the animal is in for `dt` seconds: lowers
-/// the step's need, never below its lowest value, counts its time down and says
-/// whether it is over. A `GoTo` fails
-/// until the world can tell where things are, and so does a step run outside an
-/// activity; nothing changes on a failure.
+/// the step's need for the part of `dt` the step still had, never below its lowest
+/// value, counts its time down and says whether it is over. A `GoTo` fails until the
+/// world can tell where things are, and so does a step run outside an activity;
+/// nothing changes on a failure.
 pub fn run_step(agent: &mut Agent, step: &Step, dt: f32) -> StepStatus {
     if let StepKind::GoTo(_) = step.do_ {
         return StepStatus::Failed;
@@ -62,8 +62,10 @@ pub fn run_step(agent: &mut Agent, step: &Step, dt: f32) -> StepStatus {
     let AgentState::InActivity { t_left, .. } = &mut agent.state else {
         return StepStatus::Failed;
     };
+    // only the time the step still had relieves, so the result does not depend on dt
+    let ran_s = dt.min(*t_left).max(0.0);
     if let Some((need, per_s)) = relief(step.do_) {
-        agent.needs[need] = (agent.needs[need] - per_s * dt).max(NEED_MIN);
+        agent.needs[need] = (agent.needs[need] - per_s * ran_s).max(NEED_MIN);
     }
     *t_left -= dt;
     if *t_left > 0.0 {
@@ -76,7 +78,7 @@ pub fn run_step(agent: &mut Agent, step: &Step, dt: f32) -> StepStatus {
 /// What an animal in an activity does for `dt` seconds (PRC-11 of API-COR-021): runs
 /// its current step, moves to the next one when it is done, and goes back to choosing
 /// when the step fails or the activity is gone from the species.
-pub fn do_activity(agent: &mut Agent, species: &Species, dt: f32) {
+pub(crate) fn do_activity(agent: &mut Agent, species: &Species, dt: f32) {
     let AgentState::InActivity { act, step, .. } = &agent.state else {
         return;
     };
@@ -99,7 +101,7 @@ pub fn do_activity(agent: &mut Agent, species: &Species, dt: f32) {
 
 /// Whether the animal is resting now: in an activity whose current step is `Rest`
 /// (ALG-02 keeps fatigue from rising then).
-pub fn is_resting(agent: &Agent, species: &Species) -> bool {
+pub(crate) fn is_resting(agent: &Agent, species: &Species) -> bool {
     let AgentState::InActivity { act, step, .. } = &agent.state else {
         return false;
     };
@@ -116,7 +118,7 @@ pub fn is_resting(agent: &Agent, species: &Species) -> bool {
 
 /// The need a step lowers while it runs and by how much per second; `None` for a step
 /// that lowers none.
-pub fn relief(kind: StepKind) -> Option<(Need, f32)> {
+pub(crate) fn relief(kind: StepKind) -> Option<(Need, f32)> {
     match kind {
         StepKind::Eat => Some((Need::Hunger, EAT_HUNGER_DROP_PER_S)),
         StepKind::Drink => Some((Need::Thirst, DRINK_THIRST_DROP_PER_S)),
@@ -224,13 +226,23 @@ mod tests {
         assert_eq!(choosing, before);
     }
 
+    /// UT-072 A step that ends within `dt` relieves only for the time it still had.
+    #[test]
+    fn a_step_relieves_only_for_the_time_it_had_left() {
+        let mut agent = eating();
+        // the step has STEP_S left and runs for twice that
+        run_step(&mut agent, &step(StepKind::Eat), STEP_S * 2.0);
+        let expected = HUNGER - EAT_HUNGER_DROP_PER_S * STEP_S;
+        assert!((agent.needs[Need::Hunger] - expected).abs() <= TOLERANCE);
+    }
+
     /// UT-069 A step lowers its need down to the lowest value and never past it.
     #[test]
     fn a_step_never_lowers_a_need_below_its_lowest() {
         let mut agent = eating();
-        // a run that would take off twice the hunger the animal has
-        let dt = HUNGER * 2.0 / EAT_HUNGER_DROP_PER_S;
-        run_step(&mut agent, &step(StepKind::Eat), dt);
+        // the whole step would take off twice the hunger the animal has
+        agent.needs[Need::Hunger] = EAT_HUNGER_DROP_PER_S * STEP_S / 2.0;
+        run_step(&mut agent, &step(StepKind::Eat), STEP_S);
         assert!((agent.needs[Need::Hunger] - NEED_MIN).abs() <= TOLERANCE);
     }
 

@@ -48,7 +48,7 @@ pub fn active_windows(routine: Routine) -> &'static [(f32, f32)] {
 
 /// Whether `hour` falls inside one of the routine's active windows, a window that runs
 /// past midnight included.
-pub fn is_active_hour(routine: Routine, hour: f32) -> bool {
+pub(crate) fn is_active_hour(routine: Routine, hour: f32) -> bool {
     for &(start, end) in active_windows(routine) {
         if start <= end {
             if hour >= start && hour < end {
@@ -63,10 +63,13 @@ pub fn is_active_hour(routine: Routine, hour: f32) -> bool {
     false
 }
 
-/// API-COR-010 The urge a need gives through a curve, both 0–1: `Linear` x,
-/// `Accelerating` x², `FastStart` √x, `Step` 0 below the threshold and 1 from it
-/// (ALG-10).
+/// API-COR-010 The urge a need gives through a curve: `Linear` x, `Accelerating` x²,
+/// `FastStart` √x, `Step` 0 below the threshold and 1 from it (ALG-10). It runs 0–1
+/// for a need of 0–1; fatigue can pull past 1 and its urge follows, and a need below 0
+/// counts as 0.
 pub fn curve_eval(curve: Curve, x: f32) -> f32 {
+    // the square root of a negative need is NaN, and a NaN score would win every choice
+    let x = x.max(0.0);
     match curve {
         Curve::Linear => x,
         Curve::Accelerating => x * x,
@@ -97,7 +100,7 @@ pub fn routine_factor(routine: Routine, hour: f32, is_rest: bool) -> f32 {
 /// most needs pull by their value; fatigue more outside the active hours or when
 /// limping, safety by what is missing, fear and calm by the fear felt now, curiosity
 /// and boredom by the animal's traits (ALG-10).
-pub fn drive(agent: &Agent, species: &Species, need: Need, hour: f32) -> f32 {
+pub(crate) fn drive(agent: &Agent, species: &Species, need: Need, hour: f32) -> f32 {
     match need {
         Need::Hunger | Need::Thirst | Need::Heat | Need::Sing | Need::Company => agent.needs[need],
         Need::Safety => NEED_MAX - agent.needs[Need::Safety],
@@ -179,11 +182,12 @@ mod tests {
     /// Outside the active hours of a diurnal species.
     const NIGHT_H: f32 = 2.0;
 
+    /// Whether `actual` is `expected` within the tolerance.
     fn close(actual: f32, expected: f32) -> bool {
         (actual - expected).abs() <= TOLERANCE
     }
 
-    // ---- active_windows -----------------------------------------------------
+    // ---- is_active_hour -----------------------------------------------------
 
     /// UT-046 A window that runs past midnight holds the hours on both sides of it.
     #[test]
@@ -207,6 +211,20 @@ mod tests {
             // 0 and 1 are exact in every formula, so no tolerance is needed
             assert_eq!(curve_eval(curve, 0.0), 0.0, "{curve:?} at 0");
             assert_eq!(curve_eval(curve, 1.0), 1.0, "{curve:?} at 1");
+        }
+    }
+
+    /// UT-073 A need below 0 gives no urge through any curve, never a NaN.
+    #[test]
+    fn a_need_below_zero_gives_no_urge() {
+        for curve in [
+            Curve::Linear,
+            Curve::Accelerating,
+            Curve::FastStart,
+            Curve::Step,
+        ] {
+            // a need below 0 counts as exactly 0, so no tolerance is needed
+            assert_eq!(curve_eval(curve, -0.2), 0.0, "{curve:?} below 0");
         }
     }
 
@@ -234,16 +252,18 @@ mod tests {
     /// UT-050 Most needs pull by their value, and safety by what is missing of it.
     #[test]
     fn a_need_pulls_by_its_value_and_safety_by_its_lack() {
+        const HUNGER: f32 = 70.0;
+        const SAFETY: f32 = 30.0;
         let mut agent = Agent::calm();
-        agent.needs[Need::Hunger] = 70.0;
-        agent.needs[Need::Safety] = 30.0;
+        agent.needs[Need::Hunger] = HUNGER;
+        agent.needs[Need::Safety] = SAFETY;
         assert!(close(
             drive(&agent, &Species::diurnal(0.0), Need::Hunger, NOON_H),
-            70.0
+            HUNGER
         ));
         assert!(close(
             drive(&agent, &Species::diurnal(0.0), Need::Safety, NOON_H),
-            NEED_MAX - 30.0
+            NEED_MAX - SAFETY
         ));
     }
 
@@ -286,11 +306,12 @@ mod tests {
     /// UT-053 Curiosity and boredom follow the traits the animal was born with.
     #[test]
     fn curiosity_and_boredom_follow_the_traits() {
+        const TRAIT: u8 = 50;
         let mut agent = Agent::calm();
-        agent.traits[Trait::Curiosity] = 50;
-        agent.traits[Trait::Energy] = 50;
-        let curiosity = CURIOSITY_DRIVE_BASE + 50.0 * CURIOSITY_DRIVE_PER_CURIOSITY;
-        let boredom = BOREDOM_DRIVE_BASE + 50.0 * BOREDOM_DRIVE_PER_ENERGY;
+        agent.traits[Trait::Curiosity] = TRAIT;
+        agent.traits[Trait::Energy] = TRAIT;
+        let curiosity = CURIOSITY_DRIVE_BASE + f32::from(TRAIT) * CURIOSITY_DRIVE_PER_CURIOSITY;
+        let boredom = BOREDOM_DRIVE_BASE + f32::from(TRAIT) * BOREDOM_DRIVE_PER_ENERGY;
         assert!(close(
             drive(&agent, &Species::diurnal(0.0), Need::Curiosity, NOON_H),
             curiosity
@@ -378,7 +399,8 @@ mod tests {
         assert_eq!(choose_activity(&mut agent, &unknown, NOON_H), None);
     }
 
-    /// UT-058 The same seed gives the same scores, noise included.
+    /// UT-058 The same seed gives the same scores, noise included, and the noise does
+    /// move them.
     #[test]
     fn the_same_seed_scores_the_same() {
         let eat_or_drink = [("eat", Need::Hunger), ("drink", Need::Thirst)];
@@ -386,9 +408,13 @@ mod tests {
         let mut first = Agent::calm();
         first.needs[Need::Hunger] = 50.0;
         let mut second = first.clone();
-        assert_eq!(
-            choose_activity(&mut first, &species, NOON_H),
-            choose_activity(&mut second, &species, NOON_H)
+        let mut quiet = first.clone();
+        let noisy = choose_activity(&mut first, &species, NOON_H);
+        assert_eq!(noisy, choose_activity(&mut second, &species, NOON_H));
+        let without_noise = offering(&["eat", "drink"], &eat_or_drink, 0.0);
+        assert_ne!(
+            noisy.map(|(_, scores)| scores),
+            choose_activity(&mut quiet, &without_noise, NOON_H).map(|(_, scores)| scores)
         );
     }
 }
