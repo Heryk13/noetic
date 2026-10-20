@@ -23,7 +23,7 @@ const AGENT_COUNT: u64 = 4;
 /// The hash of the default world after `TICKS` steps. A change to the simulation, or a
 /// `rand` upgrade that changes the draws of a seed, refreshes it on purpose
 /// (Detailed Design 0.12).
-const GOLDEN: u64 = 0;
+const GOLDEN: u64 = 0x5a44_cdb4_b9da_a2fe;
 
 // ---- FNV-1a 64 --------------------------------------------------------------
 
